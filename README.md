@@ -13,10 +13,10 @@ Code will be updated soon. Stay Tune.
 ## Citation
 If you find this work useful for your research, please cite
 ```
-@article{Deepassport,
+@inproceedings{Deepassport,
   title={Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks},
   author={Fan, Lixin, Ng, Kam Woh and Chan, Chee Seng},
-  article={NeurIPS},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
   year={2019},
 }
 ```
