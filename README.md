@@ -20,7 +20,7 @@ The example below is running on default arguments.
 
 ### To train a normal model (without passport)
 
-Run without `--train-passport` 
+Skip `--train-passport` as follow:
 ```
 python train_v1.py
 ```
