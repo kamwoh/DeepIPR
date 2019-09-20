@@ -100,7 +100,7 @@ class Experiment(object):
         os.makedirs(self.logdir, exist_ok=True)
         os.makedirs(os.path.join(self.logdir, 'models'), exist_ok=True)
 
-        json.dump(vars(self.args), open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
+        json.dump(self.args, open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
         self.model = self.model.to(self.device)
 
     def makedirs_or_load(self):
@@ -118,7 +118,7 @@ class Experiment(object):
             os.makedirs(os.path.join(self.logdir, 'models'), exist_ok=True)
 
             # write config
-            json.dump(vars(self.args), open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
+            json.dump(self.args, open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
         else:
             self.experiment_id = self.args['exp_id']
             self.logdir = os.path.join(self.logdir, str(self.args['exp_id']))
