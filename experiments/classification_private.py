@@ -21,7 +21,7 @@ class ClassificationPrivateExperiment(Experiment):
     def __init__(self, args):
         super().__init__(args)
 
-        self.in_channels = 1 if args.dataset == 'mnist' else 3
+        self.in_channels = 1 if self.dataset == 'mnist' else 3
         self.num_classes = {
             'cifar10': 10,
             'cifar100': 100,
