@@ -66,11 +66,11 @@ All passport configs are stored in `passport_configs/`
 
 To set a passport layer for Alexnet or ResNet18, simply changing `false` to `true` or a `string`.
 
-If putting `string` into passport config, please make sure the length of string is less than number of channels in the specific layer.
+If using `string` as signature, please make sure the length of string is less than number of channels in the specific layer.
 
-For example, a layer with 256 channels, maximum 256-bit === 32 ascii characters are allowed. If signature is less than 32 characters, then it will be replaced randomly.
+For example, a layer with 256 channels, maximum 256-bit === 32 ascii characters are allowed. If the signature is less than 32 characters, then the rest of the bits will be set randomly.
 
-The example below is AlexNet with last 3 layers as passport layer, embed random signature into 4th and 5th layer and embed `this is my signature` into last layer.
+The example below is AlexNet with last 3 layers as passport layer to embed random signature into 4th and 5th layer and embed `this is my signature` into last layer.
 
 ```
 {
