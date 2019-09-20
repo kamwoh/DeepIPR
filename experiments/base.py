@@ -22,7 +22,7 @@ class Experiment(object):
         self.trainer = None
         self.train_loader = None
         self.val_loader = None
-        self.experiment_id = args.exp_id
+        self.experiment_id = args['exp_id']
 
         self.buffer = []
         self.save_history_interval = 1
@@ -120,8 +120,8 @@ class Experiment(object):
             # write config
             json.dump(vars(self.args), open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
         else:
-            self.experiment_id = self.args.exp_id
-            self.logdir = os.path.join(self.logdir, str(self.args.exp_id))
+            self.experiment_id = self.args['exp_id']
+            self.logdir = os.path.join(self.logdir, str(self.args['exp_id']))
             path = os.path.join(self.logdir, 'models', 'best.pth')
 
             # check experiment exists
