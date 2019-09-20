@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 
 import passport_generator
 import torch
@@ -104,6 +105,8 @@ class ClassificationExperiment(Experiment):
 
             load_pretrained()
             self.model = model.to(self.device)
+
+        pprint(self.model)
 
     def setup_keys(self, pretrained_model):
         if self.key_type != 'random':
