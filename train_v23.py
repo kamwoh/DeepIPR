@@ -25,8 +25,8 @@ def main():
     # passport argument
     parser.add_argument('--key-type', choices=['random', 'image', 'shuffle'], default='shuffle',
                         help='passport key type (default: shuffle)')
-    parser.add_argument('--sign-loss', type=float, default=1,
-                        help='sign loss to avoid scale not trainable (default: 1)')
+    parser.add_argument('--sign-loss', type=float, default=0.1,
+                        help='sign loss to avoid scale not trainable (default: 0.1)')
     parser.add_argument('--use-trigger-as-passport', action='store_true', default=False,
                         help='use trigger data as passport')
 
