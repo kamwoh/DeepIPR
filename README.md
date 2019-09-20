@@ -27,21 +27,21 @@ python train_v1.py
 
 ### To train a V1 model (scheme 1 passport)
 
-Run with `--train-passport`
+Run `--train-passport` as follow:
 ```
 python train_v1.py --train-passport --pretrained-path path/to/pretrained.pth
 ```
 
 ### To train a V2 model (scheme 2 passport)
 
-Do not need to run with `--train-private`, it is true by default
+Skip `--train-private`, it is true by default.
 ```
 python train_v23.py --pretrained-path path/to/pretrained.pth
 ```
 
 ### To train a V3 model (scheme 3 passport)
 
-Run with `--train-backdoor`
+Run `--train-backdoor` as follow:
 ```
 python train_v23.py --train-backdoor --pretrained-path path/to/pretrained.pth
 ```
