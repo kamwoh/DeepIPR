@@ -12,7 +12,6 @@ from experiments.utils import construct_passport_kwargs
 from models.alexnet_normal import AlexNetNormal
 from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.conv2d import ConvBlock
-from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.resnet_normal import ResNet18
 from models.resnet_passport_private import ResNet18Private
 
@@ -161,45 +160,50 @@ class ClassificationPrivateExperiment(Experiment):
             tl_model = ResNet18(num_classes=self.num_classes,
                                 norm_type=self.norm_type)
 
+        ##### load / reset weights of passport layers for clone model #####
         try:
             tl_model.load_state_dict(self.model.state_dict())
         except:
+            print('Having problem to direct load state dict, loading it manually')
             if self.arch == 'alexnet':
-                print('Having problem to direct load state dict, loading it manually')
-                for clone_m, self_m in zip(tl_model.features, self.model.features):
-                    if hasattr(clone_m, 'conv'):
-                        clone_m.conv.load_state_dict(self_m.conv.state_dict())
-                        clone_m.bn.load_state_dict(self_m.bn.state_dict(), False)
-                        clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                        clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                for tl_m, self_m in zip(tl_model.features, self.model.features):
+                    try:
+                        tl_m.load_state_dict(self_m.state_dict())
+                    except:
+                        print(
+                            'Having problem to load state dict usually caused by missing keys, load by strict=False')
+                        tl_m.load_state_dict(self_m.state_dict(), False)  # load conv weight, bn running mean
+                        tl_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
+                        tl_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+
             else:
                 passport_settings = self.passport_config
                 for l_key in passport_settings:  # layer
                     if isinstance(passport_settings[l_key], dict):
                         for i in passport_settings[l_key]:  # sequential
                             for m_key in passport_settings[l_key][i]:  # convblock
-                                clone_m = tl_model.__getattr__(l_key)[int(i)].__getattr__(m_key)  # type: ConvBlock
-                                self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(
-                                    m_key)  # type: PassportPrivateBlock
+                                tl_m = tl_model.__getattr__(l_key)[int(i)].__getattr__(m_key)  # type: ConvBlock
+                                self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
 
                                 try:
-                                    clone_m.load_state_dict(self_m.state_dict())
+                                    tl_m.load_state_dict(self_m.state_dict())
                                 except:
                                     print(f'{l_key}.{i}.{m_key} cannot load state dict directly')
-                                    clone_m.load_state_dict(self_m.state_dict(), False)
-                                    clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                                    clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                                    tl_m.load_state_dict(self_m.state_dict(), False)
+                                    tl_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
+                                    tl_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+
                     else:
-                        clone_m = tl_model.__getattr__(l_key)
+                        tl_m = tl_model.__getattr__(l_key)
                         self_m = self.model.__getattr__(l_key)
 
                         try:
-                            clone_m.load_state_dict(self_m.state_dict())
+                            tl_m.load_state_dict(self_m.state_dict())
                         except:
                             print(f'{l_key} cannot load state dict directly')
-                            clone_m.load_state_dict(self_m.state_dict(), False)
-                            clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                            clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                            tl_m.load_state_dict(self_m.state_dict(), False)
+                            tl_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
+                            tl_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
 
         tl_model.to(self.device)
         print('Loaded clone model')
@@ -240,44 +244,37 @@ class ClassificationPrivateExperiment(Experiment):
             train_metrics = tl_trainer.train(ep, self.train_data)
             valid_metrics = tl_trainer.test(self.valid_data)
 
+            ##### load transfer learning weights from clone model  #####
             try:
                 self.model.load_state_dict(tl_model.state_dict())
             except:
                 if self.arch == 'alexnet':
-                    for clone_m, self_m in zip(tl_model.features, self.model.features):
+                    for tl_m, self_m in zip(tl_model.features, self.model.features):
                         try:
-                            self_m.load_state_dict(clone_m.state_dict())
+                            self_m.load_state_dict(tl_m.state_dict())
                         except:
-                            if hasattr(clone_m, 'conv'):
-                                clone_m.conv.load_state_dict(self_m.conv.state_dict())
-                                clone_m.bn.load_state_dict(self_m.bn.state_dict(), False)
-                                clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                                clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                            self_m.load_state_dict(tl_m.state_dict(), False)
                 else:
                     passport_settings = self.passport_config
                     for l_key in passport_settings:  # layer
                         if isinstance(passport_settings[l_key], dict):
                             for i in passport_settings[l_key]:  # sequential
                                 for m_key in passport_settings[l_key][i]:  # convblock
-                                    clone_m = tl_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+                                    tl_m = tl_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
                                     self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
 
                                     try:
-                                        clone_m.load_state_dict(self_m.state_dict())
+                                        self_m.load_state_dict(tl_m.state_dict())
                                     except:
-                                        clone_m.load_state_dict(self_m.state_dict(), False)
-                                        clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                                        clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                                        self_m.load_state_dict(tl_m.state_dict(), False)
                         else:
-                            clone_m = tl_model.__getattr__(l_key)
+                            tl_m = tl_model.__getattr__(l_key)
                             self_m = self.model.__getattr__(l_key)
 
                             try:
-                                clone_m.load_state_dict(self_m.state_dict())
+                                self_m.load_state_dict(tl_m.state_dict())
                             except:
-                                clone_m.load_state_dict(self_m.state_dict(), False)
-                                clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                                clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+                                self_m.load_state_dict(tl_m.state_dict(), False)
 
             wm_metrics = tester.test_signature()
 
