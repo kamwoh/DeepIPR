@@ -70,6 +70,16 @@ If putting `string` into passport config, please make sure the length of string 
 
 For example, a layer with 256 channels, maximum 256-bit === 32 ascii characters are allowed.
 
+```
+{
+  "0": false,
+  "2": false,
+  "4": true,
+  "5": true,
+  "6": "this is my signature"
+}
+```
+
 ## Citation
 If you find this work useful for your research, please cite
 ```
