@@ -119,6 +119,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
 
     trainloader, valloader = prepare_dataset({'transfer_learning': False,
                                               'dataset': dataset,
+                                              'tl_dataset': '',
                                               'batch_size': batch_size})
 
     model = AlexNetNormal(inchan, nclass, 'bn' if scheme == 1 else 'gn')

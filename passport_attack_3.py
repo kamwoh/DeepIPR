@@ -182,6 +182,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
 
     trainloader, valloader = prepare_dataset({'transfer_learning': False,
                                               'dataset': dataset,
+                                              'tl_dataset': '',
                                               'batch_size': batch_size})
 
     passport_kwargs = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),

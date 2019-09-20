@@ -225,6 +225,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
 
     trainloader, valloader = prepare_dataset({'transfer_learning': False,
                                               'dataset': dataset,
+                                              'tl_dataset': '',
                                               'batch_size': batch_size})
     passport_data = valloader
 
