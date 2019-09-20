@@ -71,7 +71,7 @@ def main():
 
     pprint(vars(args))
 
-    exp = ClassificationPrivateExperiment(args)
+    exp = ClassificationPrivateExperiment(vars(args))
 
     if exp.is_tl:
         exp.transfer_learning()
