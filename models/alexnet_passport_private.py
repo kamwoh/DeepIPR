@@ -30,7 +30,7 @@ class AlexNetPassportPrivate(nn.Module):
             6: (3, 1)
         }
 
-        for layeridx in range(7):
+        for layeridx in range(8):
             if layeridx in maxpoolidx:
                 layers.append(nn.MaxPool2d(2, 2))
             else:
