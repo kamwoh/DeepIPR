@@ -31,29 +31,27 @@ class SignLoss(nn.Module):
 
     def add(self, scale):
         self.scale_cache = scale
-        if self.b is None:
-            self.loss += (self.alpha * (scale.abs() + 1e-7).log().abs()).sum()
-        else:
-            # hinge loss concept
-            # f(x) = max(x + 0.5, 0)*-b
-            # f(x) = max(x + 0.5, 0) if b = -1
-            # f(x) = max(0.5 - x, 0) if b = 1
 
-            # case b = -1
-            # - (-1) * 1 = 1 === bad
-            # - (-1) * -1 = -1 -> 0 === good
+        # hinge loss concept
+        # f(x) = max(x + 0.5, 0)*-b
+        # f(x) = max(x + 0.5, 0) if b = -1
+        # f(x) = max(0.5 - x, 0) if b = 1
 
-            # - (-1) * 0.6 + 0.5 = 1.1 === bad
-            # - (-1) * -0.6 + 0.5 = -0.1 -> 0 === good
+        # case b = -1
+        # - (-1) * 1 = 1 === bad
+        # - (-1) * -1 = -1 -> 0 === good
 
-            # case b = 1
-            # - (1) * -1 = 1 -> 1 === bad
-            # - (1) * 1 = -1 -> 0 === good
+        # - (-1) * 0.6 + 0.5 = 1.1 === bad
+        # - (-1) * -0.6 + 0.5 = -0.1 -> 0 === good
 
-            # let it has minimum of 0.1
-            self.loss += self.get_loss()
-            self.loss += (0.00001 * scale.view(-1).pow(2).sum())
-            self.acc += self.get_acc()
+        # case b = 1
+        # - (1) * -1 = 1 -> 1 === bad
+        # - (1) * 1 = -1 -> 0 === good
+
+        # let it has minimum of 0.1
+        self.loss += self.get_loss()
+        self.loss += (0.00001 * scale.view(-1).pow(2).sum()) # to regularize the scale not to be so large
+        self.acc += self.get_acc()
 
     def reset(self):
         self.loss = 0
