@@ -45,7 +45,7 @@ class TesterPrivate(object):
             for name, m in self.model.named_modules():
                 if isinstance(m, PassportPrivateBlock):
                     signbit = m.get_scale(ind=1).view(-1).sign()
-                    privatebit = m.bprivate
+                    privatebit = m.b
 
                     detection = (signbit == privatebit).float().mean().item()
                     res['private_' + name] = detection
