@@ -92,8 +92,7 @@ class Experiment(object):
         else:
             self.load_model('best.pth')
 
-        if self.finetune_id == 0:
-            self.finetune_id = self.get_expid(self.logdir, self.prefix)
+        self.finetune_id = self.get_expid(self.logdir, self.prefix)
 
         self.logdir = os.path.join(self.logdir, f'{self.prefix}{self.finetune_id}')
 
