@@ -36,9 +36,9 @@ class AlexNetPassportPrivate(nn.Module):
             else:
                 k = kp[layeridx][0]
                 p = kp[layeridx][1]
-                normtype = passport_kwargs[layeridx]['norm_type']
-                if passport_kwargs[layeridx]['flag']:
-                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, 1, p, passport_kwargs[layeridx]))
+                normtype = passport_kwargs[str(layeridx)]['norm_type']
+                if passport_kwargs[str(layeridx)]['flag']:
+                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, 1, p, passport_kwargs[str(layeridx)]))
                 else:
                     layers.append(ConvBlock(inp, oups[layeridx], k, 1, p, normtype))
 
