@@ -110,6 +110,8 @@ class ClassificationPrivateExperiment(Experiment):
 
         for ep in range(1, self.epochs + 1):
             train_metrics = self.trainer.train(ep, self.train_data, self.wm_data)
+            print(f'Sign Detection Accuracy: {train_metrics["sign_acc"] * 100:6.4f}')
+
             valid_metrics = self.trainer.test(self.valid_data, 'Testing Result')
 
             wm_metrics = {}

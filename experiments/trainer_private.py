@@ -100,6 +100,7 @@ class TrainerPrivate(object):
     def train(self, e, dataloader, wm_dataloader=None):
         self.model.train()
         loss_meter = 0
+        sign_loss_meter = 0
         public_acc_meter = 0
         private_acc_meter = 0
 
@@ -136,7 +137,8 @@ class TrainerPrivate(object):
                 if isinstance(m, SignLoss):
                     m.reset()
 
-            loss = 0
+            loss = torch.tensor(0.).to(self.device)
+            sign_loss = torch.tensor(0.).to(self.device)
 
             # backprop to two graph at once
             for ind in range(2):
@@ -151,14 +153,17 @@ class TrainerPrivate(object):
             # sign loss
             for m in self.model.modules():
                 if isinstance(m, SignLoss):
-                    loss += m.loss
+                    sign_loss += m.loss
 
-            loss.backward()
+            (loss + sign_loss).backward()
             self.optimizer.step()
+
+            sign_loss_meter += sign_loss.item()
             loss_meter += loss.item()
 
             print(f'Epoch {e:3d} [{i:4d}/{len(dataloader):4d}] '
                   f'Loss: {loss_meter / (i + 1):6.4f} '
+                  f'Sign Loss: {sign_loss_meter / (i + 1):6.4f} '
                   f'Priv. Acc: {private_acc_meter / (i + 1):.4f} '
                   f'Publ. Acc: {public_acc_meter / (i + 1):.4f} '
                   f'({time.time() - start_time:.2f}s)', end='\r')
@@ -169,7 +174,20 @@ class TrainerPrivate(object):
         public_acc_meter /= len(dataloader)
         private_acc_meter /= len(dataloader)
 
+        sign_acc = torch.tensor(0.).to(self.device)
+        count = 0
+
+        for m in self.model.modules():
+            if isinstance(m, SignLoss):
+                sign_acc += m.acc
+                count += 1
+
+        if count != 0:
+            sign_acc /= count
+
         return {'loss': loss_meter,
+                'sign_loss': sign_loss_meter,
+                'sign_acc': sign_acc.item(),
                 'acc_public': public_acc_meter,
                 'acc_private': private_acc_meter,
                 'time': time.time() - start_time}

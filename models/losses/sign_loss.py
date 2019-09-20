@@ -50,7 +50,7 @@ class SignLoss(nn.Module):
 
         # let it has minimum of 0.1
         self.loss += self.get_loss()
-        self.loss += (0.00001 * scale.view(-1).pow(2).sum()) # to regularize the scale not to be so large
+        self.loss += (0.00001 * scale.view(-1).pow(2).sum())  # to regularize the scale not to be so large
         self.acc += self.get_acc()
 
     def reset(self):

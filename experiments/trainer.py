@@ -88,48 +88,9 @@ class Trainer(object):
         self.scheduler = scheduler
         self.device = device
 
-    def finetune_backdoor(self, e, wm_dataloader, backdoor_input=None):
-        self.model.eval()  # freeze running mean
-        loss_meter = 0
-        acc_meter = 0
-
-        start_time = time.time()
-        for i, load in enumerate(wm_dataloader):
-            if backdoor_input is None:
-                data, target = load
-                data = data.to(self.device)
-                target = target.to(self.device)
-            else:
-                data, target, index = load
-                data = data.to(self.device)
-                target = target.to(self.device)
-                data = backdoor_input(data, index)
-
-            self.optimizer.zero_grad()
-
-            pred = self.model(data)
-            loss = F.cross_entropy(pred, target)
-            loss.backward()
-
-            self.optimizer.step()
-
-            loss_meter += loss.item()
-            acc_meter += accuracy(pred, target)[0].item()
-
-            print(f'Epoch {e:3d} [{i:4d}/{len(wm_dataloader):4d}] '
-                  f'Loss: {loss_meter / (i + 1):6.4f} '
-                  f'Acc: {acc_meter / (i + 1):.4f} ({time.time() - start_time:.2f}s)', end='\r')
-
-        loss_meter /= len(wm_dataloader)
-        acc_meter /= len(wm_dataloader)
-        print()
-
-        return {'loss': loss_meter,
-                'acc': acc_meter,
-                'time': time.time() - start_time}
-
     def train(self, e, dataloader, wm_dataloader=None):
         self.model.train()
+        sign_loss_meter = 0
         loss_meter = 0
         acc_meter = 0
 
@@ -168,19 +129,22 @@ class Trainer(object):
 
             pred = self.model(data)
             loss = F.cross_entropy(pred, target)
+            sign_loss = torch.tensor(0.).to(self.device)
 
             # add up sign loss
             for m in self.model.modules():
                 if isinstance(m, SignLoss):
-                    loss += m.loss
+                    sign_loss += m.loss
 
-            loss.backward()
+            (loss + sign_loss).backward()
             self.optimizer.step()
 
+            sign_loss_meter = sign_loss.item()
             loss_meter += loss.item()
             acc_meter += accuracy(pred, target)[0].item()
 
             print(f'Epoch {e:3d} [{i:4d}/{len(dataloader):4d}] '
+                  f'Sign Loss: {sign_loss_meter / (i + 1):6.4f} '
                   f'Loss: {loss_meter / (i + 1):6.4f} '
                   f'Acc: {acc_meter / (i + 1):.4f} ({time.time() - start_time:.2f}s)', end='\r')
 
@@ -189,7 +153,20 @@ class Trainer(object):
         loss_meter /= len(dataloader)
         acc_meter /= len(dataloader)
 
+        sign_acc = torch.tensor(0.).to(self.device)
+        count = 0
+
+        for m in self.model.modules():
+            if isinstance(m, SignLoss):
+                sign_acc += m.acc
+                count += 1
+
+        if count != 0:
+            sign_acc /= count
+
         return {'loss': loss_meter,
+                'sign_loss': sign_loss_meter,
+                'sign_acc': sign_acc.item(),
                 'acc': acc_meter,
                 'time': time.time() - start_time}
 
