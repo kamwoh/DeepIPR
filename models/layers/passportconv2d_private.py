@@ -179,7 +179,7 @@ class PassportPrivateBlock(nn.Module):
 
         if keyname in state_dict:
             self.register_buffer('key_private', torch.randn(*state_dict[keyname].size()))
-        if self.version == 3 and skeyname in state_dict:
+        if skeyname in state_dict:
             self.register_buffer('skey_private', torch.randn(*state_dict[skeyname].size()))
 
         scalename = prefix + 'scale'

@@ -39,9 +39,6 @@ class TesterPrivate(object):
 
         with torch.no_grad():
             for name, m in self.model.named_modules():
-                if not hasattr(m, 'version') or m.version == 0:  # skip other block or version = 0
-                    continue
-
                 if isinstance(m, PassportPrivateBlock):
                     signbit = m.get_scale(ind=1).view(-1).sign()
                     privatebit = m.bprivate
@@ -103,9 +100,6 @@ class TrainerPrivate(object):
         sign_loss_meter = 0
         public_acc_meter = 0
         private_acc_meter = 0
-
-        if self.scheduler is not None:
-            self.scheduler.step()
 
         if wm_dataloader is not None:
             iter_wm_dataloader = iter(wm_dataloader)
@@ -184,6 +178,9 @@ class TrainerPrivate(object):
 
         if count != 0:
             sign_acc /= count
+
+        if self.scheduler is not None:
+            self.scheduler.step()
 
         return {'loss': loss_meter,
                 'sign_loss': sign_loss_meter,

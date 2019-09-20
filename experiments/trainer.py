@@ -94,9 +94,6 @@ class Trainer(object):
         loss_meter = 0
         acc_meter = 0
 
-        if self.scheduler is not None:
-            self.scheduler.step()
-
         if wm_dataloader is not None:
             iter_wm_dataloader = iter(wm_dataloader)
         else:
@@ -163,6 +160,9 @@ class Trainer(object):
 
         if count != 0:
             sign_acc /= count
+
+        if self.scheduler is not None:
+            self.scheduler.step()
 
         return {'loss': loss_meter,
                 'sign_loss': sign_loss_meter,

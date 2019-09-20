@@ -17,7 +17,6 @@ class PassportBlock(nn.Module):
 
         self.conv = nn.Conv2d(i, o, ks, s, pd, bias=False)
 
-        self.version = passport_kwargs.get('version', 0)  # by default do not use passport
         self.key_type = passport_kwargs.get('key_type', 'random')
         self.weight = self.conv.weight
 
@@ -141,22 +140,19 @@ class PassportBlock(nn.Module):
         if self.scale is not None and not force_passport:
             return self.scale.view(1, -1, 1, 1)
         else:
-            if self.version >= 3:
-                skey = self.skey
+            skey = self.skey
 
-                scalekey = self.conv(skey)
-                b = scalekey.size(0)
-                c = scalekey.size(1)
-                scale = scalekey.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
-                scale = scale.mean(dim=0).view(1, c, 1, 1)
+            scalekey = self.conv(skey)
+            b = scalekey.size(0)
+            c = scalekey.size(1)
+            scale = scalekey.view(b, c, -1).mean(dim=2).view(b, c, 1, 1)
+            scale = scale.mean(dim=0).view(1, c, 1, 1)
 
-                if self.sign_loss is not None:
-                    self.sign_loss.reset()
-                    self.sign_loss.add(scale)
+            if self.sign_loss is not None:
+                self.sign_loss.reset()
+                self.sign_loss.add(scale)
 
-                return scale
-            else:
-                return self.get_bias(force_passport)
+            return scale
 
     def get_bias_key(self):
         return self.key
@@ -182,7 +178,7 @@ class PassportBlock(nn.Module):
 
         if keyname in state_dict:
             self.register_buffer('key', torch.randn(*state_dict[keyname].size()))
-        if self.version == 3 and skeyname in state_dict:
+        if skeyname in state_dict:
             self.register_buffer('skey', torch.randn(*state_dict[skeyname].size()))
 
         scalename = prefix + 'scale'
