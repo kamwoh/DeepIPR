@@ -252,12 +252,12 @@ def prepare_dataset(args):
                            transform=test_transforms)
 
     train_loader = DataLoader(train_dataset,
-                              batch_size=args.batch_size,
+                              batch_size=args['batch_size'],
                               shuffle=True,
                               num_workers=4,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
-                             batch_size=args.batch_size * 2,
+                             batch_size=args['batch_size'] * 2,
                              shuffle=False,
                              num_workers=4)
 

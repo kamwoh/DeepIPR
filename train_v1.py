@@ -26,12 +26,9 @@ def main():
     parser.add_argument('--key-type', choices=['random', 'image', 'shuffle'], default='shuffle',
                         help='passport key type (default: shuffle)')
     parser.add_argument('--sign-loss', type=float, default=1,
-                        help='sign loss to avoid scale not trainable')
+                        help='sign loss to avoid scale not trainable (default: 1)')
     parser.add_argument('--use-trigger-as-passport', action='store_true', default=False,
                         help='use trigger data as passport')
-
-    parser.add_argument('--target-flag',
-                        help='target flag e.g. 00001 to embed information in last layer of alexnet')
 
     parser.add_argument('--train-passport', action='store_true', default=False,
                         help='train passport')
