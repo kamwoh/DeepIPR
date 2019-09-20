@@ -1,21 +1,21 @@
 import os
 from pprint import pprint
 
-import passport_generator
 import torch
 import torch.optim as optim
-from models.alexnet_normal import AlexNetNormal
-from models.alexnet_passport import AlexNetPassport
-from models.resnet_normal import ResNet18
-from models.resnet_passport import ResNet18Passport
 
+import passport_generator
 from dataset import prepare_dataset, prepare_wm
 from experiments.base import Experiment
 from experiments.trainer import Trainer, Tester
 from experiments.trainer_private import TesterPrivate
 from experiments.utils import construct_passport_kwargs
+from models.alexnet_normal import AlexNetNormal
+from models.alexnet_passport import AlexNetPassport
 from models.layers.conv2d import ConvBlock
 from models.layers.passportconv2d import PassportBlock
+from models.resnet_normal import ResNet18
+from models.resnet_passport import ResNet18Passport
 
 
 class ClassificationExperiment(Experiment):
@@ -249,17 +249,17 @@ class ClassificationExperiment(Experiment):
                                     self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
 
                                     try:
-                                        clone_m.load_state_dict(self_m.state_dict())
+                                        self_m.load_state_dict(clone_m.state_dict())
                                     except:
-                                        clone_m.load_state_dict(self_m.state_dict(), False)
+                                        self_m.load_state_dict(clone_m.state_dict(), False)
                         else:
                             clone_m = clone_model.__getattr__(l_key)
                             self_m = self.model.__getattr__(l_key)
 
                             try:
-                                clone_m.load_state_dict(self_m.state_dict())
+                                self_m.load_state_dict(clone_m.state_dict())
                             except:
-                                clone_m.load_state_dict(self_m.state_dict(), False)
+                                self_m.load_state_dict(clone_m.state_dict(), False)
 
             clone_model.to(self.device)
             self.model.to(self.device)

@@ -36,6 +36,10 @@ class TesterPrivate(object):
         self.model.eval()
 
         res = {}
+        avg_private = 0
+        avg_public = 0
+        count_private = 0
+        count_public = 0
 
         with torch.no_grad():
             for name, m in self.model.named_modules():
@@ -45,6 +49,8 @@ class TesterPrivate(object):
 
                     detection = (signbit == privatebit).float().mean().item()
                     res['private_' + name] = detection
+                    avg_private += detection
+                    count_private += 1
 
                 if isinstance(m, PassportBlock):
                     signbit = m.get_scale().view(-1).sign()
@@ -52,6 +58,13 @@ class TesterPrivate(object):
 
                     detection = (signbit == publicbit).float().mean().item()
                     res['public_' + name] = detection
+                    avg_public += detection
+                    count_public += 1
+
+        if count_private != 0:
+            print(f'Private Sign Detection Accuracy: {avg_private / count_private * 100:6.4f}')
+        if count_public != 0:
+            print(f'Public Sign Detection Accuracy: {avg_public / count_public * 100:6.4f}')
 
         return res
 
