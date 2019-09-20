@@ -10,6 +10,8 @@ With the rapid development of deep neural networks (DNN), there emerges an urgen
 
 ## How to run
 
+Run with `python 3.6` and `pytorch 1.2`
+
 You must have a pretrained model before training a passport layer if you wish to use a real image as passport.
 
 To see more arguments, please run the script with `--help`.
