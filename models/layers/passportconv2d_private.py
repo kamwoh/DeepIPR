@@ -41,7 +41,7 @@ class PassportPrivateBlock(nn.Module):
             b = bsign
         self.register_buffer('b', b)
 
-        self.init_public_bit = passport_kwargs.get('init_public_bit', False)
+        self.init_public_bit = passport_kwargs.get('init_public_bit', True)
 
         self.requires_reset_key = False
 
