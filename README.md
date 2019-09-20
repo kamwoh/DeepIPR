@@ -10,7 +10,7 @@ With the rapid development of deep neural networks (DNN), there emerges an urgen
 
 ## How to run
 
-For compability issu3, please run the code using `python 3.6` and `pytorch 1.2`
+For compability issue, please run the code using `python 3.6` and `pytorch 1.2`
 
 If you wish to use a real image as the passport, please ensure that you have a pre-trained model before training the passport layer. 
 
@@ -18,7 +18,7 @@ To see more arguments, please run the script with `--help`.
 
 The example below is running on default arguments.
 
-### To train a normal model (no passport)
+### To train a normal model (without passport)
 
 Run without `--train-passport` 
 ```
@@ -48,15 +48,15 @@ python train_v23.py --train-backdoor --pretrained-path path/to/pretrained.pth
 
 ## Dataset
 
-Most of the datasets will be automatically downloaded except `trigger set` data.
+Most of the datasets will be automatically downloaded except the `trigger set` data.
 
-To download the default trigger-set, please refer to https://github.com/adiyoss/WatermarkNN
+To download the default `trigger set` data, kindly refer to https://github.com/adiyoss/WatermarkNN
 
-Also, please refer to `dataset.py` to understand how data are loaded.
+Also, please refer to `dataset.py` to understand how the data are loaded.
 
 ## Attack
 
-`passport_attack_1.py`, `passport_attack_2.py`, and `passport_attack_3.py` are scripts to run fake attack 1, 2 and 3 as mentioned in our paper.
+`passport_attack_1.py`, `passport_attack_2.py`, and `passport_attack_3.py` are the scripts to run fake attack 1, 2 and 3 respectively, as mentioned in our paper.
 
 Please refer to `--help` on how to setup the arguments.
 
@@ -66,11 +66,11 @@ All passport configs are stored in `passport_configs/`
 
 To set a passport layer for Alexnet or ResNet18, simply changing `false` to `true` or a `string`.
 
-If using `string` as a signature, please make sure that the length of the string is less than the number of channels in the specific layer.
+If `string` is deployed as the signature, please make sure that the length of the string is less than the number of channels in the specific layer.
 
-For example, a layer with 256 channels, maximum 256-bit === 32 ascii characters are allowed. If the signature is less than 32 characters, the remaining bits will be set randomly.
+For example, a layer with 256 channels, so the maximum will be 256-bit === 32 ascii characters are allowed. If the signature is less than 32 characters, the remaining bits will be set randomly.
 
-The example below is AlexNet with last 3 layers as the passport layer to embed random signature into 4th and 5th layer and embed `this is my signature` into last layer.
+The example below is AlexNet with the last 3 layers as the passport layer, i.e we embed random signature into the 4th and 5th layer and embed `this is my signature` into the last layer (6th).
 
 ```
 {
