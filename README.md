@@ -2,11 +2,11 @@
 
 [Project](https://kamwoh.github.io/DeepIPR/) | [ArXiv](https://arxiv.org/abs/1909.07830)
 
-Released on September 16, 2019
-
 ### Official pytorch implementation of the paper: "Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks"
 
 #### NeurIPS 2019
+
+Released on September 16, 2019
 
 ## Description
 
