@@ -20,11 +20,17 @@ With substantial amount of time, resources and human (team) efforts invested to 
 
 ### Paper
 
-<a href="http://papers.nips.cc/paper/8719-rethinking-deep-neural-network-ownership-verification-embedding-passports-to-defeat-ambiguity-attacks" rel="some text">![](paperfirstpage.png =x200)</a>
+
+<img src="paperfirstpage.png" height=200  />
+
+<a href="http://papers.nips.cc/paper/8719-rethinking-deep-neural-network-ownership-verification-embedding-passports-to-defeat-ambiguity-attacks">Paper</a>
 
 ### Powerpoint Slide
 
-<a href="Digital Passport Slide.pdf" rel="some text">![](slidefirstpage.png =x200)</a>
+<img src="slidefirstpage.png" height=200  />
+
+<a href="Digital Passport Slide.pdf" rel="some text">Slide</a>
+
 
 <!--<a href="https://arxiv.org/abs/1909.07830" style="display:inline-block;margin-right:10px;text-align: center" ><img src="paperfirstpage.png" height=200  /><p>Paper</p></a>-->
 
@@ -32,7 +38,9 @@ With substantial amount of time, resources and human (team) efforts invested to 
 
 ## Code
 
-<a href="https://github.com/kamwoh/DeepIPR" rel="some text">![](githublogo.png =x200)</a>
+<img src="githublogo.jpg" height=200  />
+
+<a href="https://github.com/kamwoh/DeepIPR  " rel="some text">Github Repository</a>
 
 <!--<a href="https://github.com/kamwoh/DeepIPR" style="display:inline-block;text-align:center;"><img src=githublogo.jpg height=200 /><p>Github Repository</p></a>-->
 
