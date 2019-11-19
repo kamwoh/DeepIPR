@@ -18,10 +18,13 @@ With substantial amount of time, resources and human (team) efforts invested to 
 
 ## Materials
 
+<!-- {% raw %} -->
+
 <a href="https://arxiv.org/abs/1909.07830" style="display:inline-block;margin-right:10px;text-align: center" >
     <img src="paperfirstpage.png" height=200  />
     <p>Paper</p>
 </a>
+
 <a href="Digital Passport Slide.pdf" style="display:inline-block;text-align: center;">
     <img src="slidefirstpage.png" height=200  />
     <p>Slide</p>
@@ -29,10 +32,14 @@ With substantial amount of time, resources and human (team) efforts invested to 
 
 ## Code
 
+<!-- {% raw %} -->
+
 <a href="https://github.com/kamwoh/DeepIPR" style="display:inline-block;text-align:center;">
     <img src=githublogo.jpg height=200 />
     <p>Github Repository</p>
 </a>
+
+<!-- {% endraw %}) -->
 
 ## Citation
 
