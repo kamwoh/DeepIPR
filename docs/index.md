@@ -35,6 +35,12 @@ With substantial amount of time, resources and human (team) efforts invested to 
 
 <!--<a href="Digital Passport Slide.pdf" style="display:inline-block;text-align: center;"><img src="slidefirstpage.png" height=200  /><p>Slide</p></a>-->
 
+### Poster
+
+<!--<img src="slidefirstpage.png" height=200  />-->
+
+<a href="poster.pdf">![Poster](poster.png)</a>
+
 ## Code
 
 <!--<img src="githublogo.jpg" height=200  />-->
