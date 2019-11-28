@@ -4,9 +4,9 @@
 
 Authors: 
 
-1. [Lixin Fan](https://scholar.google.fi/citations?user=fOsgdn0AAAAJ&hl=en)<sup>1</sup>
-2. [Kam Woh Ng](https://www.linkedin.com/in/thomas-ng-kam-woh/)<sup>1,2</sup>
-3. [Chee Seng Chan](http://cs-chan.com/)<sup>2</sup>
+1. [Lixin Fan](https://scholar.google.fi/citations?user=fOsgdn0AAAAJ&hl=en)<sup>1</sup> (lixinfan@webank.com)
+2. [Kam Woh Ng](https://www.linkedin.com/in/thomas-ng-kam-woh/)<sup>1,2</sup> (jinhewu@webank.com)
+3. [Chee Seng Chan](http://cs-chan.com/)<sup>2</sup> (cs.chan@um.edu.my)
 
 [Webank AI Lab](https://webank.com/en/)<sup>1</sup>, [University of Malaya](https://www.um.edu.my/)<sup>2</sup>
 
