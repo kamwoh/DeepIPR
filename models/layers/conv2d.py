@@ -6,7 +6,7 @@ class ConvBlock(nn.Module):
     def __init__(self, i, o, ks=3, s=1, pd=1, bn='bn', relu=True):
         super().__init__()
 
-        self.conv = nn.Conv2d(i, o, ks, s, pd, bias=not bn)
+        self.conv = nn.Conv2d(i, o, ks, s, pd, bias=bn == 'none')
 
         if bn == 'bn':
             self.bn = nn.BatchNorm2d(o)
