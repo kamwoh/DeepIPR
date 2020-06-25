@@ -34,7 +34,7 @@ def main():
     parser.add_argument('--train-passport', action='store_true', default=False,
                         help='train passport')
     parser.add_argument('--train-backdoor', action='store_true', default=False,
-                        help='train backdoor')
+                        help='train backdoor, adding backdoor images for blackbox detection')
     parser.add_argument('--train-private', action='store_true', default=False,
                         help='train private')
 

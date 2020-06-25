@@ -25,7 +25,8 @@ class ClassificationPrivateExperiment(Experiment):
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.dataset]
 
         self.mean = torch.tensor([0.4914, 0.4822, 0.4465])
@@ -35,12 +36,12 @@ class ClassificationPrivateExperiment(Experiment):
         self.wm_data = None
 
         if self.use_trigger_as_passport:
-            self.passport_data = prepare_wm('data/trigger_set/pics')
+            self.passport_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
         else:
             self.passport_data = self.valid_data
 
         if self.train_backdoor:
-            self.wm_data = prepare_wm('data/trigger_set/pics')
+            self.wm_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
 
         self.construct_model()
 

@@ -38,12 +38,12 @@ class ClassificationExperiment(Experiment):
         self.wm_data = None
 
         if self.use_trigger_as_passport:
-            self.passport_data = prepare_wm('data/trigger_set/pics')
+            self.passport_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
         else:
             self.passport_data = self.valid_data
 
         if self.train_backdoor:
-            self.wm_data = prepare_wm('data/trigger_set/pics')
+            self.wm_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
 
         self.construct_model()
 

@@ -164,14 +164,18 @@ class WMDataset(Dataset):
         return len(self.datapaths)
 
 
-def prepare_wm(datapath='data/trigger_set/pics', shuffle=True):
+def prepare_wm(datapath='data/trigger_set/pics', shuffle=True, crop=32):
     triggerroot = datapath
     labelpath = 'data/trigger_set/labels-cifar.txt'
+    if not os.path.exists(labelpath):
+        raise FileNotFoundError('Please download trigger set data from https://github.com/adiyoss/WatermarkNN. '
+                                'We are using similar folder structure, you can place downloaded dataset in '
+                                '"data/trigger_set"')
 
     mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
 
     transform_list = [
-        transforms.CenterCrop(32),
+        transforms.CenterCrop(crop),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ]
