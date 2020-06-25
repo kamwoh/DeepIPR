@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets.cifar import CIFAR10, CIFAR100
 from torchvision.datasets.folder import pil_loader, make_dataset, IMG_EXTENSIONS, ImageFolder
 from torchvision.transforms import transforms
-
+import torch
 
 class Caltech101(Dataset):
     link = 'http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz'
@@ -197,7 +197,8 @@ def prepare_imagenet(args):
 
     ##### train transform #####
     transform_list = [
-        transforms.RandomCrop(32, padding=4),
+        # transforms.RandomCrop(224, padding=4),
+        transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -207,6 +208,8 @@ def prepare_imagenet(args):
 
     ##### test transform #####
     transform_list = [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ]
@@ -214,26 +217,33 @@ def prepare_imagenet(args):
     test_transforms = transforms.Compose(transform_list)
 
     root = 'data/ILSVRC2012'
-
-    train_dataset = ImageFolder(root,
-                                transform=train_transforms)
-    test_dataset = ImageFolder(root,
-                               transform=test_transforms)
+    
+    if os.path.exists(root + '/cache.pth'):
+        print('Loading from cache')
+        train_dataset, test_dataset = torch.load(root + '/cache.pth')
+    else:
+        train_dataset = ImageFolder(root + '/train',
+                                    transform=train_transforms)
+        test_dataset = ImageFolder(root + '/val',
+                                   transform=test_transforms)
+        print('Saving to cache')
+        torch.save((train_dataset, test_dataset), '/cache.pth')
 
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=16,
+                              num_workers=36,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=False,
-                             num_workers=16)
+                             num_workers=36)
 
     return train_loader, test_loader
 
 
 def prepare_dataset(args):
+    print('Loading dataset')
     is_tl = args['transfer_learning']
     tl_ds = args['tl_dataset']
     ds = args['dataset'] if not is_tl else tl_ds

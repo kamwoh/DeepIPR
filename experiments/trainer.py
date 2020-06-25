@@ -146,7 +146,8 @@ class Trainer(object):
                   f'Acc: {acc_meter / (i + 1):.4f} ({time.time() - start_time:.2f}s)', end='\r')
 
         print()
-
+        
+        sign_loss_meter /= len(dataloader)
         loss_meter /= len(dataloader)
         acc_meter /= len(dataloader)
 

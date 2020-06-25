@@ -67,6 +67,7 @@ class ClassificationExperiment(Experiment):
             self.makedirs_or_load()
 
     def construct_model(self):
+        print('Construct Model')
         def setup_keys():
             if self.key_type != 'random':
                 if self.arch == 'alexnet':
@@ -300,6 +301,8 @@ class ClassificationExperiment(Experiment):
 
         if self.save_interval > 0:
             self.save_model('epoch-0.pth')
+            
+        print('Start training')
 
         for ep in range(1, self.epochs + 1):
             train_metrics = self.trainer.train(ep, self.train_data, self.wm_data)
