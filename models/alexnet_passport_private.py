@@ -23,7 +23,7 @@ class AlexNetPassportPrivate(nn.Module):
             6: 256
         }
         kp = {
-            0: (5, 2),
+            0: (5, 2) if num_classes != 1000 else (11, 4, 2),
             2: (5, 2),
             4: (3, 1),
             5: (3, 1),
@@ -32,21 +32,39 @@ class AlexNetPassportPrivate(nn.Module):
 
         for layeridx in range(8):
             if layeridx in maxpoolidx:
-                layers.append(nn.MaxPool2d(2, 2))
+                ks = 2 if num_classes != 1000 else 3
+                layers.append(nn.MaxPool2d(ks, 2))
             else:
-                k = kp[layeridx][0]
-                p = kp[layeridx][1]
+                if len(kp[layeridx]) == 2:
+                    k, p = kp[layeridx]
+                    s = 1
+                else:
+                    k, s, p = kp[layeridx]
                 normtype = passport_kwargs[str(layeridx)]['norm_type']
                 if passport_kwargs[str(layeridx)]['flag']:
-                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, 1, p, passport_kwargs[str(layeridx)]))
+                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, s, p, passport_kwargs[str(layeridx)]))
                 else:
-                    layers.append(ConvBlock(inp, oups[layeridx], k, 1, p, normtype))
+                    layers.append(ConvBlock(inp, oups[layeridx], k, s, p, normtype))
 
                 inp = oups[layeridx]
 
+        if num_classes == 1000:
+            layers.append(nn.AdaptiveAvgPool2d((6, 6)))
+
         self.features = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(4 * 4 * 256, num_classes)
+        if num_classes == 1000:
+            self.classifier = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(256 * 6 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, num_classes),
+            )
+        else:
+            self.classifier = nn.Linear(4 * 4 * 256, num_classes)
 
     def set_intermediate_keys(self, pretrained_model, x, y=None):
         with torch.no_grad():

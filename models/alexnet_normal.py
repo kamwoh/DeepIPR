@@ -10,18 +10,13 @@ class AlexNetNormal(nn.Module):
 
         if num_classes == 1000:  # imagenet1000
             self.features = nn.Sequential(
-                nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
-                nn.ReLU(inplace=True),
+                ConvBlock(3, 64, 11, 4, 2, bn='none'),
                 nn.MaxPool2d(kernel_size=3, stride=2),
-                nn.Conv2d(64, 192, kernel_size=5, padding=2),
-                nn.ReLU(inplace=True),
+                ConvBlock(64, 192, 5, 1, 2, bn='none'),
                 nn.MaxPool2d(kernel_size=3, stride=2),
-                nn.Conv2d(192, 384, kernel_size=3, padding=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(384, 256, kernel_size=3, padding=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.ReLU(inplace=True),
+                ConvBlock(192, 384, 3, 1, 1, bn='none'),
+                ConvBlock(384, 256, 3, 1, 1, bn='none'),
+                ConvBlock(256, 256, 3, 1, 1, bn='none'),
                 nn.MaxPool2d(kernel_size=3, stride=2),
                 nn.AdaptiveAvgPool2d((6, 6))
             )
