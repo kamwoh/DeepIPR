@@ -183,7 +183,7 @@ class Trainer(object):
 
         start_time = time.time()
         with torch.no_grad():
-            for load in dataloader:
+            for i, load in enumerate(dataloader):
                 data, target = load[:2]
                 data = data.to(self.device, non_blocking=True)
                 target = target.to(self.device, non_blocking=True)
@@ -194,6 +194,9 @@ class Trainer(object):
 
                 acc_meter += pred.eq(target.view_as(pred)).sum().item()
                 runcount += data.size(0)
+                print(f'{msg} [{i + 1}/{len(dataloader)}]: '
+                      f'Loss: {loss_meter / (i + 1):6.4f} '
+                      f'Acc: {acc_meter / (i + 1):6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
