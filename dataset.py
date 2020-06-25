@@ -227,17 +227,17 @@ def prepare_imagenet(args):
         test_dataset = ImageFolder(root + '/val',
                                    transform=test_transforms)
         print('Saving to cache')
-        torch.save((train_dataset, test_dataset), '/cache.pth')
+        torch.save((train_dataset, test_dataset), root + '/cache.pth')
 
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=36,
+                              num_workers=72,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=False,
-                             num_workers=36)
+                             num_workers=72)
 
     return train_loader, test_loader
 
