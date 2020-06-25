@@ -17,7 +17,8 @@ def main():
     parser.add_argument('--dataset', default='cifar10', choices=['cifar10',
                                                                  'cifar100',
                                                                  'caltech-101',
-                                                                 'caltech-256'],
+                                                                 'caltech-256',
+                                                                 'imagenet1000'],
                         help='training dataset (default: cifar10)')
     parser.add_argument('--norm-type', default='bn', choices=['bn', 'gn', 'in', 'none'],
                         help='norm type (default: bn)')
@@ -61,7 +62,8 @@ def main():
     parser.add_argument('--tl-dataset', default='cifar100', choices=['cifar10',
                                                                      'cifar100',
                                                                      'caltech-101',
-                                                                     'caltech-256'],
+                                                                     'caltech-256',
+                                                                     'imagenet1000'],
                         help='transfer learning dataset (default: cifar100)')
     parser.add_argument('--tl-scheme', default='rtal', choices=['rtal',
                                                                 'ftal'],

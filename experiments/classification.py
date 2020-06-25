@@ -27,7 +27,8 @@ class ClassificationExperiment(Experiment):
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.dataset]
 
         self.mean = torch.tensor([0.4914, 0.4822, 0.4465])
