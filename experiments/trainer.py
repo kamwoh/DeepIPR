@@ -72,8 +72,8 @@ class Tester(object):
                 runcount += data.size(0)
                 if self.verbose:
                     print(f'{msg} [{i + 1}/{len(dataloader)}]: '
-                          f'Loss: {loss_meter / (i + 1):6.4f} '
-                          f'Acc: {acc_meter / (i + 1):6.2f} ({time.time() - start_time:.2f}s)', end='\r')
+                          f'Loss: {loss_meter / runcount:6.4f} '
+                          f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
@@ -199,8 +199,8 @@ class Trainer(object):
                 acc_meter += pred.eq(target.view_as(pred)).sum().item()
                 runcount += data.size(0)
                 print(f'{msg} [{i + 1}/{len(dataloader)}]: '
-                      f'Loss: {loss_meter / (i + 1):6.4f} '
-                      f'Acc: {acc_meter / (i + 1):6.2f} ({time.time() - start_time:.2f}s)', end='\r')
+                      f'Loss: {loss_meter / runcount:6.4f} '
+                      f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
