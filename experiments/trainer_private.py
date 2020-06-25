@@ -28,6 +28,8 @@ def accuracy(output, target, topk=(1,)):
 
 class TesterPrivate(object):
     def __init__(self, model, device, verbose=True):
+        if torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
         self.model = model
         self.device = device
         self.verbose = verbose
@@ -76,16 +78,20 @@ class TesterPrivate(object):
 
         start_time = time.time()
         with torch.no_grad():
-            for load in dataloader:
+            for i, load in enumerate(dataloader):
                 data, target = load[:2]
-                data = data.to(self.device)
-                target = target.to(self.device)
+                data = data.to(self.device, non_blocking=True)
+                target = target.to(self.device, non_blocking=True)
 
                 pred = self.model(data, ind=ind)
                 loss_meter += F.cross_entropy(pred, target, reduction='sum').item()  # sum up batch loss
                 pred = pred.max(1, keepdim=True)[1]  # get the index of the max log-probability
                 acc_meter += pred.eq(target.view_as(pred)).sum().item()
                 runcount += data.size(0)
+                if self.verbose:
+                    print(f'{msg} [{i + 1}/{len(dataloader)}]: '
+                          f'Loss: {loss_meter / runcount:6.4f} '
+                          f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
@@ -101,6 +107,8 @@ class TesterPrivate(object):
 
 class TrainerPrivate(object):
     def __init__(self, model, optimizer, scheduler, device):
+        if torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -121,8 +129,8 @@ class TrainerPrivate(object):
 
         start_time = time.time()
         for i, (data, target) in enumerate(dataloader):
-            data = data.to(self.device)
-            target = target.to(self.device)
+            data = data.to(self.device, non_blocking=True)
+            target = target.to(self.device, non_blocking=True)
 
             if iter_wm_dataloader is not None:
                 try:
@@ -131,8 +139,8 @@ class TrainerPrivate(object):
                     iter_wm_dataloader = iter(wm_dataloader)
                     wm_data, wm_target = next(iter_wm_dataloader)
 
-                wm_data = wm_data.to(self.device)
-                wm_target = wm_target.to(self.device)
+                wm_data = wm_data.to(self.device, non_blocking=True)
+                wm_target = wm_target.to(self.device, non_blocking=True)
 
                 data = torch.cat([data, wm_data], dim=0)
                 target = torch.cat([target, wm_target], dim=0)
@@ -215,16 +223,19 @@ class TrainerPrivate(object):
 
             start_time = time.time()
             with torch.no_grad():
-                for load in dataloader:
+                for i, load in enumerate(dataloader):
                     data, target = load[:2]
-                    data = data.to(self.device)
-                    target = target.to(self.device)
+                    data = data.to(self.device, non_blocking=True)
+                    target = target.to(self.device, non_blocking=True)
 
                     pred = self.model(data, ind=i)
                     loss_meter += F.cross_entropy(pred, target, reduction='sum').item()  # sum up batch loss
                     pred = pred.max(1, keepdim=True)[1]  # get the index of the max log-probability
                     acc_meter += pred.eq(target.view_as(pred)).sum().item()
                     runcount += data.size(0)
+                    print(f'{msg} [{i + 1}/{len(dataloader)}]: '
+                          f'Loss: {loss_meter / runcount:6.4f} '
+                          f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
             loss_meter /= runcount
             acc_meter = 100 * acc_meter / runcount

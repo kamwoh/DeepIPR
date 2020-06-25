@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 
 import torch
 import torch.optim as optim
@@ -65,6 +66,7 @@ class ClassificationPrivateExperiment(Experiment):
             self.makedirs_or_load()
 
     def construct_model(self):
+        print('Construct Model')
         def setup_keys():
             if self.key_type != 'random':
                 if self.arch == 'alexnet':
@@ -78,6 +80,7 @@ class ClassificationPrivateExperiment(Experiment):
         passport_kwargs = construct_passport_kwargs(self)
         self.passport_kwargs = passport_kwargs
 
+        print('Loading arch: ' + self.arch)
         if self.arch == 'alexnet':
             model = AlexNetPassportPrivate(self.in_channels, self.num_classes, passport_kwargs)
         else:
@@ -86,6 +89,8 @@ class ClassificationPrivateExperiment(Experiment):
         self.model = model.to(self.device)
 
         setup_keys()
+
+        pprint(self.model)
 
     def setup_keys(self, pretrained_model):
         if self.key_type != 'random':
@@ -107,6 +112,8 @@ class ClassificationPrivateExperiment(Experiment):
 
         if self.save_interval > 0:
             self.save_model('epoch-0.pth')
+
+        print('Start Training')
 
         for ep in range(1, self.epochs + 1):
             train_metrics = self.trainer.train(ep, self.train_data, self.wm_data)
