@@ -138,7 +138,7 @@ class ResNetPrivate(nn.Module):
             out = block(out, force_passport, ind)
         for block in self.layer4:
             out = block(out, force_passport, ind)
-        out = F.avg_pool2d(out, 4)
+        out = F.adaptive_avg_pool2d(out, (1, 1))
         out = out.view(out.size(0), -1)
         out = self.linear(out)
 
