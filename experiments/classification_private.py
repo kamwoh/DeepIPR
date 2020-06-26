@@ -69,11 +69,25 @@ class ClassificationPrivateExperiment(Experiment):
         print('Construct Model')
         def setup_keys():
             if self.key_type != 'random':
+                pretrained_from_torch = self.pretrained_path is None
                 if self.arch == 'alexnet':
-                    pretrained_model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
+                    norm_type = 'none' if pretrained_from_torch else self.norm_type
+                    pretrained_model = AlexNetNormal(self.in_channels,
+                                                     self.num_classes,
+                                                     norm_type=norm_type,
+                                                     pretrained=pretrained_from_torch)
                 else:
-                    pretrained_model = ResNet18(num_classes=self.num_classes, norm_type=self.norm_type)
-                pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                    norm_type = 'bn' if pretrained_from_torch else self.norm_type
+                    pretrained_model = ResNet18(num_classes=self.num_classes,
+                                                norm_type=norm_type,
+                                                pretrained=pretrained_from_torch)
+
+                if not pretrained_from_torch:
+                    print('Loading pretrained from self-trained model')
+                    pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                else:
+                    print('Loading pretrained from torch-pretrained model')
+
                 pretrained_model = pretrained_model.to(self.device)
                 self.setup_keys(pretrained_model)
 

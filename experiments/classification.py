@@ -85,7 +85,10 @@ class ClassificationExperiment(Experiment):
                                                 pretrained=pretrained_from_torch)
 
                 if not pretrained_from_torch:
+                    print('Loading pretrained from self-trained model')
                     pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                else:
+                    print('Loading pretrained from torch-pretrained model')
 
                 pretrained_model = pretrained_model.to(self.device)
                 self.setup_keys(pretrained_model)
