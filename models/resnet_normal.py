@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.models import resnet18
 
 from models.layers.conv2d import ConvBlock
 
@@ -48,18 +49,53 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, norm_type='bn'):
+    def __init__(self, block, num_blocks, num_classes=10, norm_type='bn', pretrained=False):
         super(ResNet, self).__init__()
         self.in_planes = 64
         self.num_blocks = num_blocks
         self.norm_type = norm_type
 
-        self.convbnrelu_1 = ConvBlock(3, 64, 3, 1, 1, bn=norm_type, relu=True)
-        self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
-        self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
+        if num_classes == 1000:
+            self.convbnrelu_1 = nn.Sequential(
+                ConvBlock(3, 64, 7, 2, 3, bn=norm_type, relu=True),  # 112
+                nn.MaxPool2d(3, 2, 1),  # 56
+            )
+        else:
+            self.convbnrelu_1 = ConvBlock(3, 64, 3, 1, 1, bn=norm_type, relu=True)  # 32
+        self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)  # 32/ 56
+        self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)  # 16/ 28
+        self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)  # 8/ 14
+        self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)  # 4/ 7
         self.linear = nn.Linear(512 * block.expansion, num_classes)
+
+        if num_classes == 1000 and pretrained:
+            assert sum(num_blocks) == 8, 'only implemented for resnet18'
+            layers = [self.convbnrelu_1[0].conv, self.convbnrelu_1[0].bn]
+            for blocklayers in [self.layer1, self.layer2, self.layer3, self.layer4]:
+                for blocklayer in blocklayers:
+                    b1 = blocklayer.convbnrelu_1
+                    b2 = blocklayer.convbn_2
+                    b3 = blocklayer.shortcut
+                    layers += [b1.conv, b1.bn, b2.conv, b2.bn]
+                    if not isinstance(b3, nn.Sequential):
+                        layers += [b3.conv, b3.bn]
+            layers += [self.linear]
+
+            self._load_pretrained_from_torch(layers)
+
+    def _load_pretrained_from_torch(self, layers):
+        # load a pretrained alexnet from torchvision
+        torchmodel = resnet18(True)
+        torchlayers = [torchmodel.conv1, torchmodel.bn1]
+        for torchblocklayers in [torchmodel.layer1, torchmodel.layer2, torchmodel.layer3, torchmodel.layer4]:
+            for blocklayer in torchblocklayers:
+                torchlayers += [blocklayer.conv1, blocklayer.bn1, blocklayer.conv2, blocklayer.bn2]
+                if blocklayer.downsample is not None:
+                    torchlayers += [blocklayer.downsample[0], blocklayer.downsample[1]]
+
+        for torchlayer, layer in zip(torchlayers, layers):
+            assert torchlayer.weight.size() == layer.weight.size(), 'must be same'
+            layer.load_state_dict(torchlayer.state_dict())
 
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
@@ -103,10 +139,10 @@ def ResNet152(**model_kwargs):
 
 
 if __name__ == '__main__':
-    key_model = ResNet18()
+    key_model = ResNet18(num_classes=1000, pretrained=True)
 
-    for name in key_model.named_modules():
-        print(name[0])
+    # for name in key_model.named_modules():
+    #     print(name[0])
     #
     # model = ResNet50(num_classes=10)
     #

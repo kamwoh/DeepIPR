@@ -68,15 +68,25 @@ class ClassificationExperiment(Experiment):
 
     def construct_model(self):
         print('Construct Model')
+
         def setup_keys():
             if self.key_type != 'random':
+                pretrained_from_torch = self.pretrained_path is None
                 if self.arch == 'alexnet':
-                    pretrained_model = AlexNetNormal(self.in_channels, self.num_classes)
+                    norm_type = 'none' if pretrained_from_torch else self.norm_type
+                    pretrained_model = AlexNetNormal(self.in_channels,
+                                                     self.num_classes,
+                                                     norm_type=norm_type,
+                                                     pretrained=pretrained_from_torch)
                 else:
+                    norm_type = 'bn' if pretrained_from_torch else self.norm_type
                     pretrained_model = ResNet18(num_classes=self.num_classes,
-                                                norm_type=self.norm_type)
+                                                norm_type=norm_type,
+                                                pretrained=pretrained_from_torch)
 
-                pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                if not pretrained_from_torch:
+                    pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+
                 pretrained_model = pretrained_model.to(self.device)
                 self.setup_keys(pretrained_model)
 
@@ -301,7 +311,7 @@ class ClassificationExperiment(Experiment):
 
         if self.save_interval > 0:
             self.save_model('epoch-0.pth')
-            
+
         print('Start training')
 
         for ep in range(1, self.epochs + 1):
