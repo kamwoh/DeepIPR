@@ -90,7 +90,14 @@ class ResNetPassport(nn.Module):
         self.in_planes = 64
         self.num_blocks = num_blocks
 
-        self.convbnrelu_1 = get_convblock(passport_kwargs['convbnrelu_1'])(3, 64, 3, 1, 1)
+        if num_classes == 1000:
+            self.convbnrelu_1 = nn.Sequential(
+                get_convblock(passport_kwargs['convbnrelu_1'])(3, 64, 7, 2, 3),  # 112
+                nn.MaxPool2d(3, 2, 1),  # 56
+            )
+        else:
+            self.convbnrelu_1 = get_convblock(passport_kwargs['convbnrelu_1'])(3, 64, 3, 1, 1)  # 32
+
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1, passport_kwargs=passport_kwargs['layer1'])
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2, passport_kwargs=passport_kwargs['layer2'])
         self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2, passport_kwargs=passport_kwargs['layer3'])
