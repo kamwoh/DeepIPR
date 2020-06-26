@@ -4,11 +4,12 @@ import sys
 from collections import defaultdict
 
 import numpy as np
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets.cifar import CIFAR10, CIFAR100
 from torchvision.datasets.folder import pil_loader, make_dataset, IMG_EXTENSIONS, ImageFolder
 from torchvision.transforms import transforms
-import torch
+
 
 class Caltech101(Dataset):
     link = 'http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz'
@@ -217,7 +218,7 @@ def prepare_imagenet(args):
     test_transforms = transforms.Compose(transform_list)
 
     root = 'data/ILSVRC2012'
-    
+
     if os.path.exists(root + '/cache.pth'):
         print('Loading from cache')
         train_dataset, test_dataset = torch.load(root + '/cache.pth')
@@ -233,11 +234,13 @@ def prepare_imagenet(args):
                               batch_size=args['batch_size'],
                               shuffle=True,
                               num_workers=72,
-                              drop_last=True)
+                              drop_last=True,
+                              pin_memory=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=False,
-                             num_workers=72)
+                             num_workers=72,
+                             pin_memory=True)
 
     return train_loader, test_loader
 

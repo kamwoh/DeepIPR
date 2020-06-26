@@ -1,7 +1,11 @@
 import argparse
 from pprint import pprint
 
+import torch
+
 from experiments.classification import ClassificationExperiment
+
+torch.backends.cudnn.benchmark = True
 
 
 def main():
