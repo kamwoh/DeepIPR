@@ -86,7 +86,7 @@ class BasicPrivateBlock(nn.Module):
 
 
 class ResNetPrivate(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, passport_kwargs={}):
+    def __init__(self, block, num_blocks, num_classes=10, passport_kwargs={}, pretrained=False):
         super(ResNetPrivate, self).__init__()
         self.in_planes = 64
         self.num_blocks = num_blocks
@@ -152,6 +152,7 @@ def ResNet18Private(**model_kwargs):
 if __name__ == '__main__':
     import json
     from pprint import pprint
+    from experiments.trainer_private import TesterPrivate
 
     passport_settings = json.load(open('../passport_configs/resnet18_passport.json'))
     passport_kwargs = {}
@@ -201,3 +202,5 @@ if __name__ == '__main__':
 
     key_model(torch.randn(1, 3, 32, 32), ind=0)
     key_model(torch.randn(1, 3, 32, 32), ind=1)
+
+    TesterPrivate(key_model, torch.device('cpu')).test_signature()
