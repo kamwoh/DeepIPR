@@ -30,9 +30,6 @@ class ClassificationPrivateExperiment(Experiment):
             'imagenet1000': 1000
         }[self.dataset]
 
-        self.mean = torch.tensor([0.4914, 0.4822, 0.4465])
-        self.std = torch.tensor([0.2023, 0.1994, 0.2010])
-
         self.train_data, self.valid_data = prepare_dataset(self.args)
         self.wm_data = None
 
@@ -49,7 +46,7 @@ class ClassificationPrivateExperiment(Experiment):
         optimizer = optim.SGD(self.model.parameters(),
                               lr=self.lr,
                               momentum=0.9,
-                              weight_decay=0.0005)
+                              weight_decay=0.0001)
 
         if len(self.lr_config[self.lr_config['type']]) != 0:  # if no specify steps, then scheduler = None
             scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
