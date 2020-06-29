@@ -173,7 +173,7 @@ def prepare_wm(datapath='data/trigger_set/pics', shuffle=True, crop=32):
                                 'We are using similar folder structure, you can place downloaded dataset in '
                                 '"data/trigger_set"')
 
-    mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
     transform_list = [
         transforms.CenterCrop(crop),
@@ -233,12 +233,12 @@ def prepare_imagenet(args):
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=32,
+                              num_workers=72,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=False,
-                             num_workers=32)
+                             num_workers=72)
 
     return train_loader, test_loader
 
@@ -264,7 +264,7 @@ def prepare_dataset(args):
         'caltech-256': Caltech256
     }[ds]
 
-    mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
     ##### train transform #####
 
