@@ -25,7 +25,7 @@ class ConvBlock(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        init.kaiming_normal_(self.conv.weight, nonlinearity='relu')
+        init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
 
     def forward(self, x):
         x = self.conv(x)
