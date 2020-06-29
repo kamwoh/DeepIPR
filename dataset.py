@@ -194,7 +194,7 @@ def prepare_wm(datapath='data/trigger_set/pics', shuffle=True, crop=32):
 
 
 def prepare_imagenet(args):
-    mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
     ##### train transform #####
     transform_list = [
