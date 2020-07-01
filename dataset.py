@@ -233,12 +233,12 @@ def prepare_imagenet(args):
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=72,
+                              num_workers=32,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=False,
-                             num_workers=72)
+                             num_workers=32)
 
     return train_loader, test_loader
 
