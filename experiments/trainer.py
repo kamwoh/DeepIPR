@@ -144,7 +144,7 @@ class Trainer(object):
             (loss + sign_loss).backward()
             self.optimizer.step()
 
-            sign_loss_meter = sign_loss.item()
+            sign_loss_meter += sign_loss.item()
             loss_meter += loss.item()
             acc_meter += accuracy(pred, target)[0].item()
 
