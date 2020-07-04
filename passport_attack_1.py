@@ -240,8 +240,9 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
 
     if arch == 'alexnet':
         for fidx in plkeys:
-            model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-            model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+            print(model.features[int(fidx)])
+            model.features[int(fidx)].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
+            model.features[int(fidx)].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
     else:
         raise NotImplementedError
 
@@ -285,6 +286,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
         print(f'Attack count: {r}')
         reset_passport()
         res = run_test()
+        res['attack_rep'] = r
         history.append(res)
 
     histdf = pd.DataFrame(history)
