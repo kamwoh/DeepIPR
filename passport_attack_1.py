@@ -238,12 +238,14 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     sd = torch.load(loadpath)
     model.load_state_dict(sd, strict=False)
 
-    if arch == 'alexnet':
-        for fidx in plkeys:
-            model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-            model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
-    else:
-        raise NotImplementedError
+    # if arch == 'alexnet':
+    #     for fidx in plkeys:
+    #         model.features[int(fidx)].init_scale(True)
+    #         model.features[int(fidx)].init_bias(True)
+    #         model.features[int(fidx)].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
+    #         model.features[int(fidx)].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    # else:
+    #     raise NotImplementedError
 
     passblocks = []
 
@@ -254,7 +256,8 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     trainloader, valloader = prepare_dataset({'transfer_learning': False,
                                               'dataset': dataset,
                                               'tl_dataset': '',
-                                              'batch_size': batch_size})
+                                              'batch_size': batch_size,
+                                              'shuffle_val': True})
     passport_data = valloader
 
     pretrained_model = load_pretrained(arch, nclass).to(device)
