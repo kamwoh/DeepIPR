@@ -356,7 +356,7 @@ if __name__ == '__main__':
     parser.add_argument('--rep', default=1, type=int,
                         help='training id')
     parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18'])
-    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100'])
+    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100', 'imagenet1000'])
     parser.add_argument('--flipperc', default=0, type=float,
                         help='flip percentange 0~1')
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)

@@ -271,7 +271,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='fake attack 1: random passport')
     parser.add_argument('--attack-rep', default=1, type=int)
     parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18'])
-    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100'])
+    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100', 'imagenet1000'])
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
