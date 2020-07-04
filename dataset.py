@@ -317,7 +317,7 @@ def prepare_dataset(args):
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
-                             shuffle=False,
+                             shuffle=args.get('shuffle_val', False),
                              num_workers=4)
 
     return train_loader, test_loader

@@ -207,7 +207,8 @@ def load_pretrained(arch, nclass):
 
 
 def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
-                 loadpath='', passport_config='passport_configs/alexnet_passport.json'):
+                 loadpath='', passport_config='passport_configs/alexnet_passport.json',
+                 tagnum=1):
     batch_size = 64
     nclass = {
         'cifar100': 100,
@@ -236,15 +237,17 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
             model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
 
     sd = torch.load(loadpath)
-    model.load_state_dict(sd, strict=False)
+    model.load_state_dict(sd)
+    model = model.to(device)
 
-    if arch == 'alexnet':
-        for fidx in plkeys:
-            print(model.features[int(fidx)])
-            model.features[int(fidx)].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-            model.features[int(fidx)].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
-    else:
-        raise NotImplementedError
+    # if arch == 'alexnet':
+    #     for fidx in plkeys:
+    #         model.features[int(fidx)].init_scale(True)
+    #         model.features[int(fidx)].init_bias(True)
+    #         model.features[int(fidx)].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
+    #         model.features[int(fidx)].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    # else:
+    #     raise NotImplementedError
 
     passblocks = []
 
@@ -255,7 +258,8 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     trainloader, valloader = prepare_dataset({'transfer_learning': False,
                                               'dataset': dataset,
                                               'tl_dataset': '',
-                                              'batch_size': batch_size})
+                                              'batch_size': batch_size,
+                                              'shuffle_val': True})
     passport_data = valloader
 
     pretrained_model = load_pretrained(arch, nclass).to(device)
@@ -290,7 +294,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
         history.append(res)
 
     histdf = pd.DataFrame(history)
-    histdf.to_csv(f'logs/passport_attack_1/{arch}-{scheme}-history-{dataset}-{attack_rep}.csv')
+    histdf.to_csv(f'logs/passport_attack_1/{arch}-{scheme}-history-{dataset}-{attack_rep}-{tagnum}.csv')
 
 
 if __name__ == '__main__':
@@ -303,6 +307,7 @@ if __name__ == '__main__':
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
+    parser.add_argument('--tagnum', default=torch.randint(100000).item(), type=int, help='tag number of the experiment')
     args = parser.parse_args()
 
     run_attack_1(args.attack_rep,
@@ -310,4 +315,5 @@ if __name__ == '__main__':
                  args.dataset,
                  args.scheme,
                  args.loadpath,
-                 args.passport_config)
+                 args.passport_config,
+                 args.tagnum)
