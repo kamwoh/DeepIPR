@@ -218,10 +218,11 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     device = torch.device('cuda')
 
     # baselinepath = f'logs/alexnet_{dataset}/1/models/best.pth'
-    passport_kwargs = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),
-                                                           'norm_type': 'bn',
-                                                           'sl_ratio': 0.1,
-                                                           'key_type': 'shuffle'})
+    passport_kwargs, plkeys = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),
+                                                                   'norm_type': 'bn',
+                                                                   'sl_ratio': 0.1,
+                                                                   'key_type': 'shuffle'},
+                                                                  True)
 
     if arch == 'alexnet':
         if scheme == 1:
@@ -237,9 +238,12 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     sd = torch.load(loadpath)
     model.load_state_dict(sd, strict=False)
 
-    for fidx in [0, 2]:
-        model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-        model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    if arch == 'alexnet':
+        for fidx in plkeys:
+            model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
+            model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    else:
+        raise NotImplementedError
 
     passblocks = []
 
