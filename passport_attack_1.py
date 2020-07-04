@@ -15,6 +15,9 @@ from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.losses.sign_loss import SignLoss
+from models.resnet_normal import ResNet18
+from models.resnet_passport import ResNet18Passport
+from models.resnet_passport_private import ResNet18Private
 
 
 class DatasetArgs():
@@ -189,6 +192,20 @@ def get_passport(passport_data, device):
     return key_x, key_y
 
 
+def load_pretrained(arch, nclass):
+    if arch == 'alexnet':
+        pretrained_model = AlexNetNormal(3,
+                                         nclass,
+                                         norm_type='none',
+                                         pretrained=True)
+    else:
+        pretrained_model = ResNet18(num_classes=nclass,
+                                    norm_type='bn',
+                                    pretrained=True)
+
+    return pretrained_model
+
+
 def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
                  loadpath='', passport_config='passport_configs/alexnet_passport.json'):
     batch_size = 64
@@ -197,18 +214,22 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     lr = 0.01
     device = torch.device('cuda')
 
-    baselinepath = f'logs/alexnet_{dataset}/1/models/best.pth'
+    # baselinepath = f'logs/alexnet_{dataset}/1/models/best.pth'
     passport_kwargs = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),
                                                            'norm_type': 'bn',
                                                            'sl_ratio': 0.1,
                                                            'key_type': 'shuffle'})
 
-    if scheme == 1:
-        model = AlexNetPassport(inchan, nclass, passport_kwargs)
-    elif scheme == 2:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+    if arch == 'alexnet':
+        if scheme == 1:
+            model = AlexNetPassport(inchan, nclass, passport_kwargs)
+        else:
+            model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
     else:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+        if scheme == 1:
+            model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
+        else:
+            model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
 
     sd = torch.load(loadpath)
     model.load_state_dict(sd, strict=False)
@@ -229,9 +250,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
                                               'batch_size': batch_size})
     passport_data = valloader
 
-    pretrained_model = AlexNetNormal(inchan, nclass)
-    pretrained_model.load_state_dict(torch.load(baselinepath))
-    pretrained_model.to(device)
+    pretrained_model = load_pretrained(arch, nclass).to(device)
 
     def reset_passport():
         print('Reset passport')
