@@ -269,7 +269,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
 
     criterion = nn.CrossEntropyLoss()
 
-    dirname = f'logs/passport_attack_1/{os.path.basename(os.path.dirname(loadpath))}'
+    dirname = f'logs/passport_attack_1/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
 
     history = []

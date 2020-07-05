@@ -177,7 +177,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     history.append(res)
     print()
 
-    dirname = f'logs/passport_attack_2/{os.path.basename(os.path.dirname(loadpath))}'
+    dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
 
     for ep in range(1, epochs + 1):
