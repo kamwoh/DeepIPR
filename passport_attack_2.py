@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -7,9 +8,11 @@ import torch.nn as nn
 
 import passport_generator
 from dataset import prepare_dataset
+from experiments.utils import construct_passport_kwargs_from_dict
 from models.alexnet_normal import AlexNetNormal
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
+from models.resnet_normal import ResNet18
 
 
 class DatasetArgs():
@@ -109,7 +112,8 @@ def get_passport(passport_data, device):
     return key_x, key_y
 
 
-def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''):
+def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
+                 passport_config='passport_configs/alexnet_passport.json', tagnum=1):
     epochs = 100
     batch_size = 64
     nclass = 100 if dataset == 'cifar100' else 10
@@ -121,21 +125,32 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
                                               'dataset': dataset,
                                               'tl_dataset': '',
                                               'batch_size': batch_size})
+    passport_kwargs, plkeys = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),
+                                                                   'norm_type': 'bn',
+                                                                   'sl_ratio': 0.1,
+                                                                   'key_type': 'shuffle'},
+                                                                  True)
 
-    model = AlexNetNormal(inchan, nclass, 'bn' if scheme == 1 else 'gn')
+    if arch == 'alexnet':
+        model = AlexNetNormal(inchan, nclass, 'bn' if scheme == 1 else 'gn')
+    else:
+        model = ResNet18(num_classes=nclass,
+                         norm_type='bn' if scheme == 1 else 'gn')
+
     model.to(device)
 
     sd = torch.load(loadpath)
-    model.load_state_dict(sd, strict=False)
+    model.load_state_dict(sd, strict=False)  # need to load with strict because passport model no scale and bias
 
     for param in model.parameters():
         param.requires_grad_(False)
 
-    for fidx in [0, 2]:
-        model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-        model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    # for fidx in [0, 2]:
+    #     model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
+    #     model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
 
-    for fidx in [4, 5, 6]:
+    for fidx in plkeys:
+        fidx = int(fidx)
         model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
         model.features[fidx].bn.bias.data.zero_()
 
@@ -162,7 +177,8 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     history.append(res)
     print()
 
-    os.makedirs('logs/passport_attack_2', exist_ok=True)
+    dirname = f'logs/passport_attack_2/{os.path.basename(os.path.dirname(loadpath))}'
+    os.makedirs(dirname, exist_ok=True)
 
     for ep in range(1, epochs + 1):
         if scheduler is not None:
@@ -187,10 +203,10 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
         history.append(res)
 
         torch.save(model.state_dict(),
-                   f'logs/passport_attack_2/{arch}-{scheme}-last-{dataset}-{rep}.pth')
+                   f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}.pth')
 
     histdf = pd.DataFrame(history)
-    histdf.to_csv(f'logs/passport_attack_2/{arch}-{scheme}-history-{dataset}-{rep}.csv')
+    histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{tagnum}.csv')
 
 
 if __name__ == '__main__':
@@ -203,10 +219,14 @@ if __name__ == '__main__':
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
+    parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
+                        help='tag number of the experiment')
     args = parser.parse_args()
 
     run_attack_2(args.rep,
                  args.arch,
                  args.dataset,
                  args.scheme,
-                 args.loadpath)
+                 args.loadpath,
+                 args.passport_config,
+                 args.tagnum)
