@@ -240,15 +240,6 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     model.load_state_dict(sd)
     model = model.to(device)
 
-    # if arch == 'alexnet':
-    #     for fidx in plkeys:
-    #         model.features[int(fidx)].init_scale(True)
-    #         model.features[int(fidx)].init_bias(True)
-    #         model.features[int(fidx)].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-    #         model.features[int(fidx)].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
-    # else:
-    #     raise NotImplementedError
-
     passblocks = []
 
     for m in model.modules():
@@ -278,7 +269,8 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
 
     criterion = nn.CrossEntropyLoss()
 
-    os.makedirs('logs/passport_attack_1', exist_ok=True)
+    dirname = f'logs/passport_attack_1/{os.path.basename(os.path.dirname(loadpath))}'
+    os.makedirs(dirname, exist_ok=True)
 
     history = []
 
@@ -294,7 +286,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
         history.append(res)
 
     histdf = pd.DataFrame(history)
-    histdf.to_csv(f'logs/passport_attack_1/{arch}-{scheme}-history-{dataset}-{attack_rep}-{tagnum}.csv')
+    histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{attack_rep}-{tagnum}.csv')
 
 
 if __name__ == '__main__':
@@ -307,7 +299,8 @@ if __name__ == '__main__':
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
-    parser.add_argument('--tagnum', default=torch.randint(100000).item(), type=int, help='tag number of the experiment')
+    parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
+                        help='tag number of the experiment')
     args = parser.parse_args()
 
     run_attack_1(args.attack_rep,
