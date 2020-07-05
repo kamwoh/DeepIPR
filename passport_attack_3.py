@@ -172,7 +172,7 @@ def test(model, criterion, valloader, device, scheme):
 
 
 def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
-                 loadpath='', passport_config=''):
+                 loadpath='', passport_config='', tagnum=1):
     epochs = 100
     batch_size = 64
     nclass = 100 if dataset == 'cifar100' else 10
@@ -268,7 +268,8 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
 
     history = []
 
-    os.makedirs('logs/passport_attack_3', exist_ok=True)
+    dirname = f'logs/passport_attack_3/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
+    os.makedirs(dirname, exist_ok=True)
 
     def run_cs():
         cs = []
@@ -308,7 +309,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
     torch.save({'origpassport': origpassport,
                 'fakepassport': fakepassport,
                 'state_dict': model.state_dict()},
-               f'logs/passport_attack_3_epochs/{arch}-{scheme}-last-{dataset}-{rep}-{flipperc:.1f}-e0.pth')
+               f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-e0.pth')
 
     for ep in range(1, epochs + 1):
         if scheduler is not None:
@@ -342,10 +343,10 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
         torch.save({'origpassport': origpassport,
                     'fakepassport': fakepassport,
                     'state_dict': model.state_dict()},
-                   f'logs/passport_attack_3/{arch}-{scheme}-last-{dataset}-{rep}-{flipperc:.1f}-e{ep}.pth')
+                   f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-e{ep}.pth')
 
     histdf = pd.DataFrame(history)
-    histdf.to_csv(f'logs/passport_attack_3/{arch}-{scheme}-history-{dataset}-{rep}-{flipperc:.1f}.csv')
+    histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{rep}-{tagnum}-{flipperc:.1f}.csv')
 
 
 if __name__ == '__main__':
@@ -362,9 +363,11 @@ if __name__ == '__main__':
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
+    parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
+                        help='tag number of the experiment')
     args = parser.parse_args()
 
     run_maximize(args.rep, args.flipperc,
                  args.arch, args.dataset,
                  args.scheme, args.loadpath,
-                 args.passport_config)
+                 args.passport_config, args.tagnum)
