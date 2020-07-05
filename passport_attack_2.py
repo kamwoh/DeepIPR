@@ -10,9 +10,13 @@ import passport_generator
 from dataset import prepare_dataset
 from experiments.utils import construct_passport_kwargs_from_dict
 from models.alexnet_normal import AlexNetNormal
+from models.alexnet_passport import AlexNetPassport
+from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.resnet_normal import ResNet18
+from models.resnet_passport import ResNet18Passport
+from models.resnet_passport_private import ResNet18Private
 
 
 class DatasetArgs():
@@ -140,10 +144,24 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
         model = ResNet18(num_classes=nclass,
                          norm_type='bn' if scheme == 1 else 'gn')
 
-    model.to(device)
+    if arch == 'alexnet':
+        if scheme == 1:
+            passport_model = AlexNetPassport(inchan, nclass, passport_kwargs)
+        else:
+            passport_model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+    else:
+        if scheme == 1:
+            passport_model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
+        else:
+            passport_model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
+
+    sd = torch.load(loadpath)
+    passport_model.load_state_dict(sd)
+    passport_model = passport_model.to(device)
 
     sd = torch.load(loadpath)
     model.load_state_dict(sd, strict=False)  # need to load with strict because passport model no scale and bias
+    model = model.to(device)
 
     for param in model.parameters():
         param.requires_grad_(False)
@@ -152,13 +170,16 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     #     model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
     #     model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
 
-    for fidx in plkeys:
-        fidx = int(fidx)
-        model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
-        model.features[fidx].bn.bias.data.zero_()
+    if arch == 'alexnet':
+        for fidx in plkeys:
+            fidx = int(fidx)
+            model.features[fidx].bn.weight.data.copy_(passport_model.features[fidx].get_scale().view(-1))
+            model.features[fidx].bn.bias.data.copy_(passport_model.features[fidx].get_bias().view(-1))
 
-        model.features[fidx].bn.weight.requires_grad_(True)
-        model.features[fidx].bn.bias.requires_grad_(True)
+            model.features[fidx].bn.weight.requires_grad_(True)
+            model.features[fidx].bn.bias.requires_grad_(True)
+    else:
+        raise NotImplementedError
 
     optimizer = torch.optim.SGD(model.parameters(),
                                 lr=lr,
@@ -179,6 +200,14 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     res['epoch'] = 0
     history.append(res)
     print()
+
+    for fidx in plkeys:
+        fidx = int(fidx)
+        model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
+        model.features[fidx].bn.bias.data.zero_()
+
+        model.features[fidx].bn.weight.requires_grad_(True)
+        model.features[fidx].bn.bias.requires_grad_(True)
 
     dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
