@@ -116,7 +116,10 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
                  passport_config='passport_configs/alexnet_passport.json', tagnum=1):
     epochs = 100
     batch_size = 64
-    nclass = 100 if dataset == 'cifar100' else 10
+    nclass = {
+        'cifar100': 100,
+        'imagenet1000': 1000
+    }.get(dataset, 10)
     inchan = 3
     lr = 0.01
     device = torch.device('cuda')
