@@ -237,8 +237,8 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
         torch.save(model.state_dict(),
                    f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}.pth')
 
-    histdf = pd.DataFrame(history)
-    histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{tagnum}.csv')
+        histdf = pd.DataFrame(history)
+        histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{tagnum}.csv')
 
 
 if __name__ == '__main__':
