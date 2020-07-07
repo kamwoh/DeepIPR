@@ -175,7 +175,10 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                  loadpath='', passport_config='', tagnum=1):
     epochs = 100
     batch_size = 64
-    nclass = 100 if dataset == 'cifar100' else 10
+    nclass = {
+        'cifar100': 100,
+        'imagenet1000': 1000
+    }.get(dataset, 10)
     inchan = 3
     lr = 0.01
     device = torch.device('cuda')
@@ -345,8 +348,8 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                     'state_dict': model.state_dict()},
                    f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-e{ep}.pth')
 
-    histdf = pd.DataFrame(history)
-    histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{rep}-{tagnum}-{flipperc:.1f}.csv')
+        histdf = pd.DataFrame(history)
+        histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{rep}-{tagnum}-{flipperc:.1f}.csv')
 
 
 if __name__ == '__main__':
