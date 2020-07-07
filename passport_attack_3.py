@@ -201,11 +201,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
         model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
 
     sd = torch.load(loadpath)
-    model.load_state_dict(sd, strict=False)
-
-    for fidx in [0, 2]:
-        model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-        model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    model.load_state_dict(sd)
 
     for param in model.parameters():
         param.requires_grad_(False)
