@@ -342,7 +342,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
         torch.save({'origpassport': origpassport,
                     'fakepassport': fakepassport,
                     'state_dict': model.state_dict()},
-                   f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-e{ep}.pth')
+                   f'{dirname}/{arch}-{scheme}-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-last.pth')
 
         histdf = pd.DataFrame(history)
         histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{rep}-{tagnum}-{flipperc:.1f}.csv')
