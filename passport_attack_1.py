@@ -258,7 +258,7 @@ def run_attack_1(attack_rep=50, arch='alexnet', dataset='cifar10', scheme=1,
     def reset_passport():
         print('Reset passport')
         x, y = get_passport(passport_data, device)
-        set_intermediate_keys(model, pretrained_model, x, y)
+        passport_generator.set_key(pretrained_model, model, x, y)
 
     def run_test():
         res = {}
