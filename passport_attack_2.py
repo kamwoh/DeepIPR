@@ -179,7 +179,19 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             model.features[fidx].bn.weight.requires_grad_(True)
             model.features[fidx].bn.bias.requires_grad_(True)
     else:
-        raise NotImplementedError
+        for fidx in plkeys:
+            layer_key, i, module_key = fidx.split('.')
+
+            def get_layer(m):
+                return m.__getattr__(layer_key)[int(i)].__getattr__(module_key)
+
+            convblock = get_layer(model)
+            passblock = get_layer(passport_model)
+            convblock.bn.weight.data.copy_(passblock.get_scale().view(-1))
+            convblock.bn.bias.data.copy_(passblock.get_bias().view(-1))
+
+            convblock.bn.weight.requires_grad_(True)
+            convblock.bn.bias.requires_grad_(True)
 
     optimizer = torch.optim.SGD(model.parameters(),
                                 lr=lr,
@@ -201,13 +213,27 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     history.append(res)
     print()
 
-    for fidx in plkeys:
-        fidx = int(fidx)
-        model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
-        model.features[fidx].bn.bias.data.zero_()
+    if arch == 'alexnet':
+        for fidx in plkeys:
+            fidx = int(fidx)
+            model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
+            model.features[fidx].bn.bias.data.zero_()
 
-        model.features[fidx].bn.weight.requires_grad_(True)
-        model.features[fidx].bn.bias.requires_grad_(True)
+            model.features[fidx].bn.weight.requires_grad_(True)
+            model.features[fidx].bn.bias.requires_grad_(True)
+    else:
+        for fidx in plkeys:
+            layer_key, i, module_key = fidx.split('.')
+
+            def get_layer(m):
+                return m.__getattr__(layer_key)[int(i)].__getattr__(module_key)
+
+            convblock = get_layer(model)
+            passblock = get_layer(passport_model)
+            convblock.bn.weight.data.normal_().sign_().mul_(0.5)
+            convblock.bn.bias.data.zero_()
+            convblock.bn.weight.requires_grad_(True)
+            convblock.bn.bias.requires_grad_(True)
 
     dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
