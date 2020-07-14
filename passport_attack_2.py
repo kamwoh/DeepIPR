@@ -218,7 +218,13 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     if arch == 'alexnet':
         for fidx in plkeys:
             fidx = int(fidx)
-            model.features[fidx].bn.weight.data.normal_().sign_().mul_(0.5)
+
+            w = model.features[fidx].bn.weight
+            size = w.size()
+            randidxs = torch.randperm(size)
+            idxs = randidxs[:int(size * args.flipperc)]  # e.g. flipperc=0.7, flip 70% of bits
+            w.data[idxs].sign_().mul_(-0.5)  # reverse the bit
+
             model.features[fidx].bn.bias.data.zero_()
 
             model.features[fidx].bn.weight.requires_grad_(True)
@@ -232,7 +238,14 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
 
             convblock = get_layer(model)
             passblock = get_layer(passport_model)
-            convblock.bn.weight.data.normal_().sign_().mul_(0.5)
+
+            w = convblock.bn.weight
+            size = w.size()
+            randidxs = torch.randperm(size)
+            idxs = randidxs[:int(size * args.flipperc)]  # e.g. flipperc=0.7, flip 70% of bits
+            w.data[idxs].sign_().mul_(-0.5)  # reverse the bit
+
+            # convblock.bn.weight.data.normal_().sign_().mul_(0.5)
             convblock.bn.bias.data.zero_()
             convblock.bn.weight.requires_grad_(True)
             convblock.bn.bias.requires_grad_(True)
@@ -281,6 +294,8 @@ if __name__ == '__main__':
     parser.add_argument('--passport-config', default='', help='path to passport config')
     parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
                         help='tag number of the experiment')
+    parser.add_argument('--flipperc', default=0.5, type=float, help='flip percentage on signature'
+                                                                    ' for scale direction')
     args = parser.parse_args()
 
     run_attack_2(args.rep,
