@@ -215,15 +215,17 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     history.append(res)
     print()
 
+    conv_weights_to_reset = []
+    total_weight_size = 0
+
     if arch == 'alexnet':
         for fidx in plkeys:
             fidx = int(fidx)
 
             w = model.features[fidx].bn.weight
             size = w.size(0)
-            randidxs = torch.randperm(size)
-            idxs = randidxs[:int(size * args.flipperc)]  # e.g. flipperc=0.7, flip 70% of bits
-            w.data[idxs].sign_().mul_(-0.5)  # reverse the bit
+            conv_weights_to_reset.append(w)
+            total_weight_size += size
 
             model.features[fidx].bn.bias.data.zero_()
 
@@ -241,14 +243,29 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
 
             w = convblock.bn.weight
             size = w.size(0)
-            randidxs = torch.randperm(size)
-            idxs = randidxs[:int(size * args.flipperc)]  # e.g. flipperc=0.7, flip 70% of bits
-            w.data[idxs].sign_().mul_(-0.5)  # reverse the bit
+            conv_weights_to_reset.append(w)
+            total_weight_size += size
 
-            # convblock.bn.weight.data.normal_().sign_().mul_(0.5)
             convblock.bn.bias.data.zero_()
             convblock.bn.weight.requires_grad_(True)
             convblock.bn.bias.requires_grad_(True)
+
+    randidxs = torch.randperm(total_weight_size)
+    idxs = randidxs[:int(total_weight_size * args.flipperc)]
+
+    for w in conv_weights_to_reset:
+        size = w.size(0)
+        # wsize of first layer = 64, e.g. 0~63 - 64 = -64~-1, this is the indices within the first layer
+        widxs = idxs[(idxs - size) < 0]
+
+        # reset the weights but remains signature sign bit
+        w.data.sign_().mul_(torch.rand(size).to(w.device))
+
+        # reverse the sign on target bit
+        w[widxs].data.mul_(-1)
+
+        # remove all indices from first layer
+        idxs = idxs[(idxs - size) >= 0]
 
     dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
