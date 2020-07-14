@@ -12,11 +12,11 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
 
         self.convbnrelu_1 = ConvBlock(in_planes, planes, 3, stride, 1, bn=norm_type, relu=True)
-        self.convbn_2 = ConvBlock(planes, planes, 3, 1, 1, bn=norm_type, relu=False)
+        self.convbn_2 = ConvBlock(planes, planes, 3, 1, 1, bn=norm_type, relu=True)
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = ConvBlock(in_planes, self.expansion * planes,
-                                      1, stride, 0, bn=norm_type, relu=False)
+                                      1, stride, 0, bn=norm_type, relu=True)
 
     def forward(self, x):
         out = self.convbnrelu_1(x)
