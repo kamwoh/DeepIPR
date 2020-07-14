@@ -220,7 +220,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             fidx = int(fidx)
 
             w = model.features[fidx].bn.weight
-            size = w.size()
+            size = w.size(0)
             randidxs = torch.randperm(size)
             idxs = randidxs[:int(size * args.flipperc)]  # e.g. flipperc=0.7, flip 70% of bits
             w.data[idxs].sign_().mul_(-0.5)  # reverse the bit
