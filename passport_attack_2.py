@@ -206,19 +206,23 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     criterion = nn.CrossEntropyLoss()
 
     history = []
-
-    print('Before training')
-    valres = test(model, criterion, valloader, device)
-    res = {}
-    for key in valres: res[f'valid_{key}'] = valres[key]
-    res['epoch'] = 0
-    history.append(res)
-    print()
-
+    
+    def evaluate():
+        print('Before training')
+        valres = test(model, criterion, valloader, device)
+        res = {}
+        for key in valres: res[f'valid_{key}'] = valres[key]
+        res['epoch'] = 0
+        history.append(res)
+        print()
+    
+    # evaluate()
+    
     conv_weights_to_reset = []
     total_weight_size = 0
 
     if arch == 'alexnet':
+        sim = 0
         for fidx in plkeys:
             fidx = int(fidx)
 
@@ -226,7 +230,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-
+            
             model.features[fidx].bn.bias.data.zero_()
 
             model.features[fidx].bn.weight.requires_grad_(True)
@@ -245,28 +249,40 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-
+            
             convblock.bn.bias.data.zero_()
             convblock.bn.weight.requires_grad_(True)
             convblock.bn.bias.requires_grad_(True)
 
     randidxs = torch.randperm(total_weight_size)
     idxs = randidxs[:int(total_weight_size * args.flipperc)]
+    print(total_weight_size, len(idxs))
 
     for w in conv_weights_to_reset:
         size = w.size(0)
         # wsize of first layer = 64, e.g. 0~63 - 64 = -64~-1, this is the indices within the first layer
+        print(len(idxs), size)
         widxs = idxs[(idxs - size) < 0]
-
+        
         # reset the weights but remains signature sign bit
-        w.data.sign_().mul_(torch.rand(size).to(w.device))
+        origsign = w.data.sign()
+        newsign = origsign.clone()
 
         # reverse the sign on target bit
-        w[widxs].data.mul_(-1)
+        newsign[widxs] *= -1
+        
+        # assign new signature
+        w.data.copy_(newsign)
 
+        sim += ((w.data.sign() == origsign).float().mean())
+        
         # remove all indices from first layer
-        idxs = idxs[(idxs - size) >= 0]
-
+        idxs = idxs[(idxs - size) >= 0] - size
+    
+    print('signature similarity', sim / len(conv_weights_to_reset))
+    
+    evaluate()
+    
     dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
 
