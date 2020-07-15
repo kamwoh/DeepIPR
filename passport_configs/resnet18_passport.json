@@ -23,13 +23,13 @@
   },
   "layer3": {
     "0": {
-      "convbnrelu_1": false,
-      "convbn_2": false,
-      "shortcut": false
+      "convbnrelu_1": true,
+      "convbn_2": true,
+      "shortcut": true
     },
     "1": {
-      "convbnrelu_1": false,
-      "convbn_2": false
+      "convbnrelu_1": true,
+      "convbn_2": true
     }
   },
   "layer4": {
