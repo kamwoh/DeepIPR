@@ -206,7 +206,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     criterion = nn.CrossEntropyLoss()
 
     history = []
-    
+
     def evaluate():
         print('Before training')
         valres = test(model, criterion, valloader, device)
@@ -215,9 +215,9 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
         res['epoch'] = 0
         history.append(res)
         print()
-    
+
     # evaluate()
-    
+
     conv_weights_to_reset = []
     total_weight_size = 0
 
@@ -230,7 +230,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-            
+
             model.features[fidx].bn.bias.data.zero_()
 
             model.features[fidx].bn.weight.requires_grad_(True)
@@ -249,7 +249,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-            
+
             convblock.bn.bias.data.zero_()
             convblock.bn.weight.requires_grad_(True)
             convblock.bn.bias.requires_grad_(True)
@@ -264,28 +264,30 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
         # wsize of first layer = 64, e.g. 0~63 - 64 = -64~-1, this is the indices within the first layer
         print(len(idxs), size)
         widxs = idxs[(idxs - size) < 0]
-        
+
         # reset the weights but remains signature sign bit
         origsign = w.data.sign()
         newsign = origsign.clone()
 
         # reverse the sign on target bit
         newsign[widxs] *= -1
-        
+
         # assign new signature
         w.data.copy_(newsign)
 
         sim += ((w.data.sign() == origsign).float().mean())
-        
+
         # remove all indices from first layer
         idxs = idxs[(idxs - size) >= 0] - size
-    
+
     print('signature similarity', sim / len(conv_weights_to_reset))
-    
+
     evaluate()
-    
+
     dirname = f'logs/passport_attack_2/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
     os.makedirs(dirname, exist_ok=True)
+
+    json.dump(vars(args), open(f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}.json', 'w+'))
 
     for ep in range(1, epochs + 1):
         if scheduler is not None:
