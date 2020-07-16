@@ -257,6 +257,7 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     randidxs = torch.randperm(total_weight_size)
     idxs = randidxs[:int(total_weight_size * args.flipperc)]
     print(total_weight_size, len(idxs))
+    sim = 0
 
     for w in conv_weights_to_reset:
         size = w.size(0)
