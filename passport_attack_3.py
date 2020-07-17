@@ -15,6 +15,8 @@ from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.losses.sign_loss import SignLoss
+from models.resnet_passport import ResNet18Passport
+from models.resnet_passport_private import ResNet18Private
 
 
 class DatasetArgs():
