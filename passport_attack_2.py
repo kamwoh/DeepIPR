@@ -119,7 +119,7 @@ def get_passport(passport_data, device):
 def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
                  passport_config='passport_configs/alexnet_passport.json', tagnum=1):
     epochs = {
-        'imagenet1000': 40
+        'imagenet1000': 30
     }.get(dataset, 100)
     batch_size = 64
     nclass = {

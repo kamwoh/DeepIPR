@@ -176,7 +176,7 @@ def test(model, criterion, valloader, device, scheme):
 def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                  loadpath='', passport_config='', tagnum=1):
     epochs = {
-        'imagenet1000': 40
+        'imagenet1000': 30
     }.get(dataset, 100)
     batch_size = 64
     nclass = {
