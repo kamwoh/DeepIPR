@@ -15,6 +15,8 @@ from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.losses.sign_loss import SignLoss
+from models.resnet_passport import ResNet18Passport
+from models.resnet_passport_private import ResNet18Private
 
 
 class DatasetArgs():
@@ -173,7 +175,9 @@ def test(model, criterion, valloader, device, scheme):
 
 def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                  loadpath='', passport_config='', tagnum=1):
-    epochs = 100
+    epochs = {
+        'imagenet1000': 40
+    }.get(dataset, 100)
     batch_size = 64
     nclass = {
         'cifar100': 100,
@@ -193,12 +197,16 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                                                            'sl_ratio': 0.1,
                                                            'key_type': 'shuffle'})
 
-    if scheme == 1:
-        model = AlexNetPassport(inchan, nclass, passport_kwargs)
-    elif scheme == 2:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+    if arch == 'alexnet':
+        if scheme == 1:
+            model = AlexNetPassport(inchan, nclass, passport_kwargs)
+        else:
+            model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
     else:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+        if scheme == 1:
+            model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
+        else:
+            model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
 
     sd = torch.load(loadpath)
     model.load_state_dict(sd)
@@ -228,6 +236,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
             m.__delattr__(keyname)
             m.__delattr__(skeyname)
 
+            # re-initialize the key and skey, but by adding noise on it
             m.register_parameter(keyname, nn.Parameter(key.clone() + torch.randn(*key.size()) * 0.001))
             m.register_parameter(skeyname, nn.Parameter(skey.clone() + torch.randn(*skey.size()) * 0.001))
             fakepassport.append(m.__getattr__(keyname))
