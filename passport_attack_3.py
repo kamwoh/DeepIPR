@@ -65,7 +65,7 @@ def train_maximize(origpassport, fakepassport, model, optimizer, criterion, trai
             mseloss += mse
             maximizeloss += 1 / mse
 
-        (loss + signloss * 0.1 + maximizeloss).backward()
+        (loss + signloss + maximizeloss).backward()
 
         torch.nn.utils.clip_grad_norm_(fakepassport, 2)
 
