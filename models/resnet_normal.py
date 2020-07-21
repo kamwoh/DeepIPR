@@ -118,6 +118,10 @@ class ResNet(nn.Module):
         return out
 
 
+def ResNet9(**model_kwargs):
+    return ResNet(BasicBlock, [1, 1, 1, 1], **model_kwargs)
+
+
 def ResNet18(**model_kwargs):
     return ResNet(BasicBlock, [2, 2, 2, 2], **model_kwargs)
 
