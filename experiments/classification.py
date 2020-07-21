@@ -14,8 +14,8 @@ from models.alexnet_normal import AlexNetNormal
 from models.alexnet_passport import AlexNetPassport
 from models.layers.conv2d import ConvBlock
 from models.layers.passportconv2d import PassportBlock
-from models.resnet_normal import ResNet18
-from models.resnet_passport import ResNet18Passport
+from models.resnet_normal import ResNet18, ResNet9
+from models.resnet_passport import ResNet18Passport, ResNet9Passport
 
 
 class ClassificationExperiment(Experiment):
@@ -76,10 +76,11 @@ class ClassificationExperiment(Experiment):
                                                      norm_type=norm_type,
                                                      pretrained=pretrained_from_torch)
                 else:
+                    ResNetClass = ResNet18 if self.arch == 'resnet18' else ResNet9
                     norm_type = 'bn' if pretrained_from_torch else self.norm_type
-                    pretrained_model = ResNet18(num_classes=self.num_classes,
-                                                norm_type=norm_type,
-                                                pretrained=pretrained_from_torch)
+                    pretrained_model = ResNetClass(num_classes=self.num_classes,
+                                                   norm_type=norm_type,
+                                                   pretrained=pretrained_from_torch)
 
                 if not pretrained_from_torch:
                     print('Loading pretrained from self-trained model')
@@ -103,8 +104,9 @@ class ClassificationExperiment(Experiment):
             if self.arch == 'alexnet':
                 model = AlexNetPassport(self.in_channels, self.num_classes, passport_kwargs)
             else:
-                model = ResNet18Passport(num_classes=self.num_classes,
-                                         passport_kwargs=passport_kwargs)
+                ResNetPassportClass = ResNet18Passport if self.arch == 'resnet18' else ResNet9Passport
+                model = ResNetPassportClass(num_classes=self.num_classes,
+                                            passport_kwargs=passport_kwargs)
             self.model = model.to(self.device)
 
             setup_keys()
@@ -113,7 +115,8 @@ class ClassificationExperiment(Experiment):
             if self.arch == 'alexnet':
                 model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
             else:
-                model = ResNet18(num_classes=self.num_classes, norm_type=self.norm_type)
+                ResNetClass = ResNet18 if self.arch == 'resnet18' else ResNet9
+                model = ResNetClass(num_classes=self.num_classes, norm_type=self.norm_type)
 
             load_pretrained()
             self.model = model.to(self.device)
