@@ -14,7 +14,7 @@ from models.alexnet_passport import AlexNetPassport
 from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
-from models.resnet_normal import ResNet18
+from models.resnet_normal import ResNet18, ResNet9
 from models.resnet_passport import ResNet18Passport, ResNet9Passport
 from models.resnet_passport_private import ResNet18Private
 
@@ -143,8 +143,9 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     if arch == 'alexnet':
         model = AlexNetNormal(inchan, nclass, 'bn' if scheme == 1 else 'gn')
     else:
-        model = ResNet18(num_classes=nclass,
-                         norm_type='bn' if scheme == 1 else 'gn')
+        ResNetClass = ResNet18 if arch == 'resnet18' else ResNet9
+        model = ResNetClass(num_classes=nclass,
+                            norm_type='bn' if scheme == 1 else 'gn')
 
     if arch == 'alexnet':
         if scheme == 1:
