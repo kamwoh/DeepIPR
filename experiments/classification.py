@@ -76,7 +76,7 @@ class ClassificationExperiment(Experiment):
                                                      norm_type=norm_type,
                                                      pretrained=pretrained_from_torch)
                 else:
-                    ResNetClass = ResNet18 if self.arch == 'resnet18' else ResNet9
+                    ResNetClass = ResNet18 if self.arch == 'resnet' else ResNet9
                     norm_type = 'bn' if pretrained_from_torch else self.norm_type
                     pretrained_model = ResNetClass(num_classes=self.num_classes,
                                                    norm_type=norm_type,
@@ -104,7 +104,7 @@ class ClassificationExperiment(Experiment):
             if self.arch == 'alexnet':
                 model = AlexNetPassport(self.in_channels, self.num_classes, passport_kwargs)
             else:
-                ResNetPassportClass = ResNet18Passport if self.arch == 'resnet18' else ResNet9Passport
+                ResNetPassportClass = ResNet18Passport if self.arch == 'resnet' else ResNet9Passport
                 model = ResNetPassportClass(num_classes=self.num_classes,
                                             passport_kwargs=passport_kwargs)
             self.model = model.to(self.device)
@@ -115,7 +115,7 @@ class ClassificationExperiment(Experiment):
             if self.arch == 'alexnet':
                 model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
             else:
-                ResNetClass = ResNet18 if self.arch == 'resnet18' else ResNet9
+                ResNetClass = ResNet18 if self.arch == 'resnet' else ResNet9
                 model = ResNetClass(num_classes=self.num_classes, norm_type=self.norm_type)
 
             load_pretrained()
