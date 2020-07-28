@@ -14,8 +14,8 @@ from models.alexnet_passport import AlexNetPassport
 from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
-from models.resnet_normal import ResNet18
-from models.resnet_passport import ResNet18Passport
+from models.resnet_normal import ResNet18, ResNet9
+from models.resnet_passport import ResNet18Passport, ResNet9Passport
 from models.resnet_passport_private import ResNet18Private
 
 
@@ -143,8 +143,9 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
     if arch == 'alexnet':
         model = AlexNetNormal(inchan, nclass, 'bn' if scheme == 1 else 'gn')
     else:
-        model = ResNet18(num_classes=nclass,
-                         norm_type='bn' if scheme == 1 else 'gn')
+        ResNetClass = ResNet18 if arch == 'resnet18' else ResNet9
+        model = ResNetClass(num_classes=nclass,
+                            norm_type='bn' if scheme == 1 else 'gn')
 
     if arch == 'alexnet':
         if scheme == 1:
@@ -153,8 +154,11 @@ def run_attack_2(rep=1, arch='alexnet', dataset='cifar10', scheme=1, loadpath=''
             passport_model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
     else:
         if scheme == 1:
-            passport_model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
+            ResNetClass = ResNet18Passport if arch == 'resnet18' else ResNet9Passport
+            passport_model = ResNetClass(num_classes=nclass, passport_kwargs=passport_kwargs)
         else:
+            if arch == 'resnet9':
+                raise NotImplementedError
             passport_model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
 
     sd = torch.load(loadpath)
@@ -323,7 +327,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='fake attack 2: reverse engineer passport scale & bias')
     parser.add_argument('--rep', default=1, type=int)
-    parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18'])
+    parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18', 'resnet9'])
     parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100', 'imagenet1000'])
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')

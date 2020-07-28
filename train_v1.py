@@ -10,7 +10,7 @@ torch.backends.cudnn.benchmark = True
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet'],
+    parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18', 'resnet9'],
                         help='architecture (default: alexnet)')
     parser.add_argument('--batch-size', type=int, default=64,
                         help='batch size (default: 64)')

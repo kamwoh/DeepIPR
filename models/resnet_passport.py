@@ -154,6 +154,10 @@ def ResNet18Passport(**model_kwargs):
     return ResNetPassport(BasicPassportBlock, [2, 2, 2, 2], **model_kwargs)
 
 
+def ResNet9Passport(**model_kwargs):
+    return ResNetPassport(BasicPassportBlock, [1, 1, 1, 1], **model_kwargs)
+
+
 if __name__ == '__main__':
     import json
     from pprint import pprint
