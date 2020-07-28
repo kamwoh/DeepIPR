@@ -248,8 +248,9 @@ def prepare_dataset(args):
     is_tl = args['transfer_learning']
     tl_ds = args['tl_dataset']
     ds = args['dataset'] if not is_tl else tl_ds
+    is_imagenet = 'imagenet1000' in args['dataset']
 
-    if 'imagenet1000' in ds:
+    if is_imagenet:
         return prepare_imagenet(args)
 
     ##### shortcut ######
@@ -268,16 +269,18 @@ def prepare_dataset(args):
 
     ##### train transform #####
 
+    imgsize = 224 if is_imagenet else 32
+
     if not is_cifar:
         transform_list = [
-            transforms.Resize(32),
-            transforms.CenterCrop(32)
+            transforms.Resize(imgsize),
+            transforms.CenterCrop(imgsize)
         ]
     else:
         transform_list = []
 
     transform_list.extend([
-        transforms.RandomCrop(32, padding=4),
+        transforms.RandomCrop(imgsize, padding=int((4 / 32) * imgsize)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -288,8 +291,8 @@ def prepare_dataset(args):
     ##### test transform #####
     if not is_cifar:
         transform_list = [
-            transforms.Resize(32),
-            transforms.CenterCrop(32)
+            transforms.Resize(imgsize),
+            transforms.CenterCrop(imgsize)
         ]
     else:
         transform_list = []

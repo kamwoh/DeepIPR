@@ -139,11 +139,14 @@ class ClassificationExperiment(Experiment):
         if not self.is_tl:
             raise Exception('Please run with --transfer-learning')
 
+        is_imagenet = self.num_classes == 1000
+
         self.num_classes = {
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.tl_dataset]
 
         ##### load clone model #####
@@ -151,10 +154,12 @@ class ClassificationExperiment(Experiment):
         if self.arch == 'alexnet':
             clone_model = AlexNetNormal(self.in_channels,
                                         self.num_classes,
-                                        self.norm_type)
+                                        self.norm_type,
+                                        imagenet=is_imagenet)
         else:
             clone_model = ResNet18(num_classes=self.num_classes,
-                                   norm_type=self.norm_type)
+                                   norm_type=self.norm_type,
+                                   imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
         try:
@@ -227,10 +232,13 @@ class ClassificationExperiment(Experiment):
         else:
             scheduler = None
 
+        ##### training is on finetune model
         self.trainer = Trainer(clone_model,
                                optimizer,
                                scheduler,
                                self.device)
+
+        ##### tester is on original model
         tester = Tester(self.model,
                         self.device)
         tester_passport = TesterPrivate(self.model,
@@ -241,6 +249,7 @@ class ClassificationExperiment(Experiment):
         best_acc = 0
 
         for ep in range(1, self.epochs + 1):
+            ##### transfer learning on new tasks #####
             train_metrics = self.trainer.train(ep, self.train_data)
             valid_metrics = self.trainer.test(self.valid_data)
 
@@ -279,14 +288,17 @@ class ClassificationExperiment(Experiment):
             clone_model.to(self.device)
             self.model.to(self.device)
 
+            ##### check if using weight of finetuned model is still able to detect trigger set watermark #####
             wm_metrics = {}
             if self.train_backdoor:
                 wm_metrics = tester.test(self.wm_data, 'WM Result')
 
+            ##### check if using weight of finetuend model is still able to extract signature correctly #####
             if self.train_passport:
                 res = tester_passport.test_signature()
                 for key in res: wm_metrics['passport_' + key] = res[key]
 
+            ##### store results #####
             metrics = {}
             for key in train_metrics: metrics[f'train_{key}'] = train_metrics[key]
             for key in valid_metrics: metrics[f'valid_{key}'] = valid_metrics[key]
