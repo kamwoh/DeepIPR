@@ -157,7 +157,7 @@ def main(arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='pruning attack: measure sig. det. & acc')
+    parser = argparse.ArgumentParser(description='pruning attack: measure sig. det. & acc pruning')
     parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18'])
     parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100', 'imagenet1000'])
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
