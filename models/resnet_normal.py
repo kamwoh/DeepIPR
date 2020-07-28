@@ -49,13 +49,13 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, norm_type='bn', pretrained=False):
+    def __init__(self, block, num_blocks, num_classes=10, norm_type='bn', pretrained=False, imagenet=False):
         super(ResNet, self).__init__()
         self.in_planes = 64
         self.num_blocks = num_blocks
         self.norm_type = norm_type
 
-        if num_classes == 1000:
+        if num_classes == 1000 or imagenet:
             self.convbnrelu_1 = nn.Sequential(
                 ConvBlock(3, 64, 7, 2, 3, bn=norm_type, relu=True),  # 112
                 nn.MaxPool2d(3, 2, 1),  # 56
