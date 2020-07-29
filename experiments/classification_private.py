@@ -64,6 +64,7 @@ class ClassificationPrivateExperiment(Experiment):
 
     def construct_model(self):
         print('Construct Model')
+
         def setup_keys():
             if self.key_type != 'random':
                 pretrained_from_torch = self.pretrained_path is None
@@ -160,24 +161,27 @@ class ClassificationPrivateExperiment(Experiment):
         if not self.is_tl:
             raise Exception('Please run with --transfer-learning')
 
-        if self.tl_dataset == 'caltech-101':
-            self.num_classes = 101
-        elif self.tl_dataset == 'cifar100':
-            self.num_classes = 100
-        elif self.tl_dataset == 'caltech-256':
-            self.num_classes = 257
-        else:  # cifar10
-            self.num_classes = 10
+        is_imagenet = self.num_classes == 1000
 
-        # load clone model
+        self.num_classes = {
+            'cifar10': 10,
+            'cifar100': 100,
+            'caltech-101': 101,
+            'caltech-256': 256,
+            'imagenet1000': 1000
+        }[self.tl_dataset]
+
+        ##### load clone model #####
         print('Loading clone model')
         if self.arch == 'alexnet':
             tl_model = AlexNetNormal(self.in_channels,
                                      self.num_classes,
-                                     self.norm_type)
+                                     self.norm_type,
+                                     imagenet=is_imagenet)
         else:
             tl_model = ResNet18(num_classes=self.num_classes,
-                                norm_type=self.norm_type)
+                                norm_type=self.norm_type,
+                                imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
         try:

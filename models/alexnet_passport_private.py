@@ -8,7 +8,7 @@ from models.layers.passportconv2d_private import PassportPrivateBlock
 
 class AlexNetPassportPrivate(nn.Module):
 
-    def __init__(self, in_channels, num_classes, passport_kwargs, pretrained=False):
+    def __init__(self, in_channels, num_classes, passport_kwargs, pretrained=False, imagenet=False):
         super().__init__()
 
         maxpoolidx = [1, 3, 7]
@@ -49,12 +49,12 @@ class AlexNetPassportPrivate(nn.Module):
 
                 inp = oups[layeridx]
 
-        if num_classes == 1000:
+        if num_classes == 1000 or imagenet:
             layers.append(nn.AdaptiveAvgPool2d((6, 6)))
 
         self.features = nn.Sequential(*layers)
 
-        if num_classes == 1000:
+        if num_classes == 1000 or imagenet:
             self.classifier = nn.Sequential(
                 nn.Dropout(),
                 nn.Linear(256 * 6 * 6, 4096),

@@ -5,12 +5,12 @@ from models.layers.conv2d import ConvBlock
 
 
 class AlexNetNormal(nn.Module):
-    def __init__(self, in_channels, num_classes, norm_type='bn', pretrained=False):
+    def __init__(self, in_channels, num_classes, norm_type='bn', pretrained=False, imagenet=False):
         super(AlexNetNormal, self).__init__()
 
         params = []
 
-        if num_classes == 1000:  # imagenet1000
+        if num_classes == 1000 or imagenet:  # imagenet1000
             if pretrained:
                 norm_type = 'none'
             self.features = nn.Sequential(
