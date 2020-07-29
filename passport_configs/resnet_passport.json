@@ -1,0 +1,46 @@
+{
+  "convbnrelu_1": false,
+  "layer1": {
+    "0": {
+      "convbnrelu_1": false,
+      "convbn_2": false
+    },
+    "1": {
+      "convbnrelu_1": false,
+      "convbn_2": false
+    }
+  },
+  "layer2": {
+    "0": {
+      "convbnrelu_1": false,
+      "convbn_2": false,
+      "shortcut": false
+    },
+    "1": {
+      "convbnrelu_1": false,
+      "convbn_2": false
+    }
+  },
+  "layer3": {
+    "0": {
+      "convbnrelu_1": false,
+      "convbn_2": false,
+      "shortcut": false
+    },
+    "1": {
+      "convbnrelu_1": false,
+      "convbn_2": false
+    }
+  },
+  "layer4": {
+    "0": {
+      "convbnrelu_1": true,
+      "convbn_2": true,
+      "shortcut": true
+    },
+    "1": {
+      "convbnrelu_1": true,
+      "convbn_2": true
+    }
+  }
+}
