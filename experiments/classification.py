@@ -3,6 +3,7 @@ from pprint import pprint
 
 import torch
 import torch.optim as optim
+from torch import nn
 
 import passport_generator
 from dataset import prepare_dataset, prepare_wm
@@ -215,7 +216,10 @@ class ClassificationExperiment(Experiment):
             # rtal = reset last layer + train all layer
             # ftal = train all layer
             try:
-                clone_model.classifier.reset_parameters()
+                if isinstance(clone_model.classifer, nn.Sequential):
+                    clone_model.classifier[-1].reset_parameters()
+                else:
+                    clone_model.classifier.reset_parameters()
             except:
                 clone_model.linear.reset_parameters()
 
