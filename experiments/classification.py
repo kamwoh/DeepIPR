@@ -216,7 +216,7 @@ class ClassificationExperiment(Experiment):
             # rtal = reset last layer + train all layer
             # ftal = train all layer
             try:
-                if isinstance(clone_model.classifer, nn.Sequential):
+                if isinstance(clone_model.classifier, nn.Sequential):
                     clone_model.classifier[-1].reset_parameters()
                 else:
                     clone_model.classifier.reset_parameters()
