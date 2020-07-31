@@ -271,7 +271,7 @@ def prepare_dataset(args):
 
     imgsize = 224 if is_imagenet else 32
 
-    if not is_cifar:
+    if (not is_cifar) or imgsize == 224:
         transform_list = [
             transforms.Resize(imgsize),
             transforms.CenterCrop(imgsize)
@@ -289,7 +289,7 @@ def prepare_dataset(args):
     train_transforms = transforms.Compose(transform_list)
 
     ##### test transform #####
-    if not is_cifar:
+    if (not is_cifar) or imgsize == 224:
         transform_list = [
             transforms.Resize(imgsize),
             transforms.CenterCrop(imgsize)
@@ -322,5 +322,7 @@ def prepare_dataset(args):
                              batch_size=args['batch_size'] * 2,
                              shuffle=args.get('shuffle_val', False),
                              num_workers=4)
+
+    print(f'Dataset: {len(train_dataset)}/{len(test_dataset)}')
 
     return train_loader, test_loader
