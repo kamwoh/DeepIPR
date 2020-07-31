@@ -279,12 +279,16 @@ def prepare_dataset(args):
     else:
         transform_list = []
 
-    transform_list.extend([
-        transforms.RandomCrop(imgsize, padding=int((4 / 32) * imgsize)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std)
-    ])
+    if not is_tl:
+        transform_list.append(
+            transforms.RandomCrop(imgsize, padding=int((4 / 32) * imgsize))
+        )
+
+    transform_list.extend([,
+                              transforms.RandomHorizontalFlip(),
+                              transforms.ToTensor(),
+                              transforms.Normalize(mean, std)
+                              ])
 
     train_transforms = transforms.Compose(transform_list)
 
