@@ -92,6 +92,7 @@ class Experiment(object):
         if not os.path.exists(path):
             print(f'Warning: No such Experiment -> {path}')
         else:
+            print(f'Loading from {path}')
             self.load_model('best.pth')
 
         self.finetune_id = self.get_expid(self.logdir, self.prefix)
@@ -100,6 +101,8 @@ class Experiment(object):
 
         os.makedirs(self.logdir, exist_ok=True)
         os.makedirs(os.path.join(self.logdir, 'models'), exist_ok=True)
+
+        print(f'Finetune logdir: {self.logdir}')
 
         json.dump(self.args, open(os.path.join(self.logdir, 'config.json'), 'w'), indent=4)
         self.model = self.model.to(self.device)

@@ -163,9 +163,7 @@ class ClassificationExperiment(Experiment):
                                 imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
-        tl_model.load_state_dict(self.model.state_dict(), strict=False)
         tl_model.to(self.device)
-
         load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
         print('Loaded clone model')
 
