@@ -97,7 +97,7 @@ def construct_passport_kwargs_from_dict(self, need_index=False):
     return passport_kwargs
 
 
-def load_normal_model_to_passport_model(arch, passport_settings, passport_model, model):
+def load_normal_model_to_passport_model(arch, plkeys, passport_model, model):
     for m in passport_model.modules():  # detect signature on scale sign
         if isinstance(m, PassportBlock):
             m.init_scale(True)
@@ -106,6 +106,14 @@ def load_normal_model_to_passport_model(arch, passport_settings, passport_model,
     if arch == 'alexnet':
         # load features weight
         passport_model.features.load_state_dict(model.features.state_dict(), False)
+
+        # load scale/bias
+        for fidx in plkeys:
+            fidx = int(fidx)
+
+            # for private, using public scale/bias, therefore no need force_passport
+            passport_model.features[fidx].scale.data.copy_(model.features[fidx].bn.weight.data)
+            passport_model.features[fidx].bias.data.copy_(model.features[fidx].bn.bias.data)
 
         # load classifier except last one
         if isinstance(passport_model.classifier, nn.Sequential):
@@ -136,6 +144,20 @@ def load_normal_model_to_passport_model(arch, passport_settings, passport_model,
         # load feature weights
         for layer, passport_layer in feature_pairs:
             passport_layer.load_state_dict(layer.state_dict(), strict=False)
+
+            # load scale/bias
+            for fidx in plkeys:
+                layer_key, i, module_key = fidx.split('.')
+
+                def get_layer(m):
+                    return m.__getattr__(layer_key)[int(i)].__getattr__(module_key)
+
+                convblock = get_layer(model)
+                passblock = get_layer(passport_model)
+
+                # for private, using public scale/bias, therefore no need force_passport
+                passblock.scale.data.copy_(convblock.bn.weight.data)
+                passblock.bias.data.copy_(convblock.bn.bias.data)
 
         # no need to load classifer as it has only one layer
 

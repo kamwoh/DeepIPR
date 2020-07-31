@@ -218,7 +218,7 @@ class ClassificationExperiment(Experiment):
             valid_metrics = self.trainer.test(self.valid_data)
 
             ##### load transfer learning weights from clone model  #####
-            load_normal_model_to_passport_model(self.arch, self.passport_kwargs, self.model, tl_model)
+            load_normal_model_to_passport_model(self.arch, self.plkeys, self.model, tl_model)
 
             tl_model.to(self.device)
             self.model.to(self.device)
