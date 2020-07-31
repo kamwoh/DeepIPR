@@ -10,7 +10,8 @@ from dataset import prepare_dataset, prepare_wm
 from experiments.base import Experiment
 from experiments.trainer import Trainer, Tester
 from experiments.trainer_private import TesterPrivate
-from experiments.utils import construct_passport_kwargs, load_passport_model_to_normal_model
+from experiments.utils import construct_passport_kwargs, load_passport_model_to_normal_model, \
+    load_normal_model_to_passport_model
 from models.alexnet_normal import AlexNetNormal
 from models.alexnet_passport import AlexNetPassport
 from models.resnet_normal import ResNet18, ResNet9
@@ -152,20 +153,20 @@ class ClassificationExperiment(Experiment):
         ##### load clone model #####
         print('Loading clone model')
         if self.arch == 'alexnet':
-            clone_model = AlexNetNormal(self.in_channels,
-                                        self.num_classes,
-                                        self.norm_type,
-                                        imagenet=is_imagenet)
+            tl_model = AlexNetNormal(self.in_channels,
+                                     self.num_classes,
+                                     self.norm_type,
+                                     imagenet=is_imagenet)
         else:
-            clone_model = ResNet18(num_classes=self.num_classes,
-                                   norm_type=self.norm_type,
-                                   imagenet=is_imagenet)
+            tl_model = ResNet18(num_classes=self.num_classes,
+                                norm_type=self.norm_type,
+                                imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
-        clone_model.load_state_dict(self.model.state_dict(), strict=False)
-        clone_model.to(self.device)
+        tl_model.load_state_dict(self.model.state_dict(), strict=False)
+        tl_model.to(self.device)
 
-        load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, clone_model)
+        load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
         print('Loaded clone model')
 
         ##### dataset is created at constructor #####
@@ -175,15 +176,15 @@ class ClassificationExperiment(Experiment):
             # rtal = reset last layer + train all layer
             # ftal = train all layer
             try:
-                if isinstance(clone_model.classifier, nn.Sequential):
-                    clone_model.classifier[-1].reset_parameters()
+                if isinstance(tl_model.classifier, nn.Sequential):
+                    tl_model.classifier[-1].reset_parameters()
                 else:
-                    clone_model.classifier.reset_parameters()
+                    tl_model.classifier.reset_parameters()
             except:
-                clone_model.linear.reset_parameters()
+                tl_model.linear.reset_parameters()
 
         ##### optimizer setup #####
-        optimizer = optim.SGD(clone_model.parameters(),
+        optimizer = optim.SGD(tl_model.parameters(),
                               lr=self.lr,
                               momentum=0.9,
                               weight_decay=0.0005)
@@ -196,7 +197,7 @@ class ClassificationExperiment(Experiment):
             scheduler = None
 
         ##### training is on finetune model
-        self.trainer = Trainer(clone_model,
+        self.trainer = Trainer(tl_model,
                                optimizer,
                                scheduler,
                                self.device)
@@ -217,38 +218,9 @@ class ClassificationExperiment(Experiment):
             valid_metrics = self.trainer.test(self.valid_data)
 
             ##### load transfer learning weights from clone model  #####
-            try:
-                self.model.load_state_dict(clone_model.state_dict())
-            except:
-                if self.arch == 'alexnet':
-                    for clone_m, self_m in zip(clone_model.features, self.model.features):
-                        try:
-                            self_m.load_state_dict(clone_m.state_dict())
-                        except:
-                            self_m.load_state_dict(clone_m.state_dict(), False)
-                else:
-                    passport_settings = self.passport_config
-                    for l_key in passport_settings:  # layer
-                        if isinstance(passport_settings[l_key], dict):
-                            for i in passport_settings[l_key]:  # sequential
-                                for m_key in passport_settings[l_key][i]:  # convblock
-                                    clone_m = clone_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                                    self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+            load_normal_model_to_passport_model(self.arch, self.passport_kwargs, self.model, tl_model)
 
-                                    try:
-                                        self_m.load_state_dict(clone_m.state_dict())
-                                    except:
-                                        self_m.load_state_dict(clone_m.state_dict(), False)
-                        else:
-                            clone_m = clone_model.__getattr__(l_key)
-                            self_m = self.model.__getattr__(l_key)
-
-                            try:
-                                self_m.load_state_dict(clone_m.state_dict())
-                            except:
-                                self_m.load_state_dict(clone_m.state_dict(), False)
-
-            clone_model.to(self.device)
+            tl_model.to(self.device)
             self.model.to(self.device)
 
             ##### check if using weight of finetuned model is still able to detect trigger set watermark #####
@@ -271,13 +243,13 @@ class ClassificationExperiment(Experiment):
 
             if self.save_interval and ep % self.save_interval == 0:
                 self.save_model(f'epoch-{ep}.pth')
-                self.save_model(f'tl-epoch-{ep}.pth', clone_model)
+                self.save_model(f'tl-epoch-{ep}.pth', tl_model)
 
             if best_acc < metrics['valid_acc']:
                 print(f'Found best at epoch {ep}\n')
                 best_acc = metrics['valid_acc']
                 self.save_model('best.pth')
-                self.save_model('tl-best.pth', clone_model)
+                self.save_model('tl-best.pth', tl_model)
 
             self.save_last_model()
 

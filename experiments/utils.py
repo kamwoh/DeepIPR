@@ -95,41 +95,31 @@ def construct_passport_kwargs_from_dict(self, need_index=False):
     return passport_kwargs
 
 
-def load_normal_model_to_passport_model(arch, plkeys, passport_model, model):
+def load_normal_model_to_passport_model(arch, passport_settings, passport_model, model):
     try:
         passport_model.load_state_dict(model.state_dict())
     except:
         if arch == 'alexnet':
-            for clone_m, self_m in zip(clone_model.features, passport_model.features):
-                try:
-                    self_m.load_state_dict(clone_m.state_dict())
-                except:
-                    self_m.load_state_dict(clone_m.state_dict(), False)
+            # load features weight
+            passport_model.features.load_state_dict(model.features.state_dict(), strict=False)
 
+            # load classifier except last one
             if isinstance(passport_model.classifier, nn.Sequential):
-                for passport_m, normal_m in passport_model.classifier:
-                    pass  # todo: continue implement
+                for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
+                    if i != len(passport_model.classifier) - 1:  # do not load last one
+                        passport_layer.load_state_dict(layer.state_dict(), strict=False)
         else:
-            passport_settings = self.passport_config
             for l_key in passport_settings:  # layer
                 if isinstance(passport_settings[l_key], dict):
                     for i in passport_settings[l_key]:  # sequential
                         for m_key in passport_settings[l_key][i]:  # convblock
-                            clone_m = clone_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                            self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-
-                            try:
-                                self_m.load_state_dict(clone_m.state_dict())
-                            except:
-                                self_m.load_state_dict(clone_m.state_dict(), False)
+                            layer = model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+                            passport_layer = passport_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+                            passport_layer.load_state_dict(layer.state_dict(), False)
                 else:
-                    clone_m = clone_model.__getattr__(l_key)
-                    self_m = self.model.__getattr__(l_key)
-
-                    try:
-                        self_m.load_state_dict(clone_m.state_dict())
-                    except:
-                        self_m.load_state_dict(clone_m.state_dict(), False)
+                    layer = model.__getattr__(l_key)
+                    passport_layer = passport_model.__getattr__(l_key)
+                    passport_layer.load_state_dict(layer.state_dict(), False)
 
 
 def load_passport_model_to_normal_model(arch, plkeys, passport_model, model):
