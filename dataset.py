@@ -284,11 +284,11 @@ def prepare_dataset(args):
             transforms.RandomCrop(imgsize, padding=int((4 / 32) * imgsize))
         )
 
-    transform_list.extend([,
-                              transforms.RandomHorizontalFlip(),
-                              transforms.ToTensor(),
-                              transforms.Normalize(mean, std)
-                              ])
+    transform_list.extend([
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ])
 
     train_transforms = transforms.Compose(transform_list)
 
