@@ -106,17 +106,29 @@ def load_normal_model_to_passport_model(arch, passport_settings, passport_model,
                 if i != len(passport_model.classifier) - 1:  # do not load last one
                     passport_layer.load_state_dict(layer.state_dict(), strict=False)
     else:
-        for l_key in passport_settings:  # layer
-            if isinstance(passport_settings[l_key], dict):
-                for i in passport_settings[l_key]:  # sequential
-                    for m_key in passport_settings[l_key][i]:  # convblock
-                        layer = model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                        passport_layer = passport_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                        passport_layer.load_state_dict(layer.state_dict(), strict=False)
-            else:
-                layer = model.__getattr__(l_key)
-                passport_layer = passport_model.__getattr__(l_key)
-                passport_layer.load_state_dict(layer.state_dict(), strict=False)
+        # for l_key in passport_settings:  # layer
+        #     if isinstance(passport_settings[l_key], dict):
+        #         for i in passport_settings[l_key]:  # sequential
+        #             for m_key in passport_settings[l_key][i]:  # convblock
+        #                 layer = model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+        #                 passport_layer = passport_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+        #                 passport_layer.load_state_dict(layer.state_dict(), strict=False)
+        #     else:
+        #         layer = model.__getattr__(l_key)
+        #         passport_layer = passport_model.__getattr__(l_key)
+        #         passport_layer.load_state_dict(layer.state_dict(), strict=False)
+
+        feature_pairs = [
+            (model.convbnrelu_1, passport_model.convbnrelu_1),
+            (model.layer1, passport_model.layer1),
+            (model.layer2, passport_model.layer2),
+            (model.layer3, passport_model.layer3),
+            (model.layer4, passport_model.layer4)
+        ]
+
+        # load feature weights
+        for layer, passport_layer in feature_pairs:
+            passport_layer.load_state_dict(layer.state_dict(), strict=False)
 
         # no need to load classifer as it has only one layer
 
