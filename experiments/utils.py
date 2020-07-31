@@ -96,44 +96,66 @@ def construct_passport_kwargs_from_dict(self, need_index=False):
 
 
 def load_normal_model_to_passport_model(arch, passport_settings, passport_model, model):
-    try:
-        passport_model.load_state_dict(model.state_dict())
-    except:
-        if arch == 'alexnet':
-            # load features weight
-            passport_model.features.load_state_dict(model.features.state_dict(), strict=False)
+    if arch == 'alexnet':
+        # load features weight
+        passport_model.features.load_state_dict(model.features.state_dict(), strict=False)
 
-            # load classifier except last one
-            if isinstance(passport_model.classifier, nn.Sequential):
-                for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
-                    if i != len(passport_model.classifier) - 1:  # do not load last one
+        # load classifier except last one
+        if isinstance(passport_model.classifier, nn.Sequential):
+            for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
+                if i != len(passport_model.classifier) - 1:  # do not load last one
+                    passport_layer.load_state_dict(layer.state_dict(), strict=False)
+    else:
+        for l_key in passport_settings:  # layer
+            if isinstance(passport_settings[l_key], dict):
+                for i in passport_settings[l_key]:  # sequential
+                    for m_key in passport_settings[l_key][i]:  # convblock
+                        layer = model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+                        passport_layer = passport_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
                         passport_layer.load_state_dict(layer.state_dict(), strict=False)
-        else:
-            for l_key in passport_settings:  # layer
-                if isinstance(passport_settings[l_key], dict):
-                    for i in passport_settings[l_key]:  # sequential
-                        for m_key in passport_settings[l_key][i]:  # convblock
-                            layer = model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                            passport_layer = passport_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                            passport_layer.load_state_dict(layer.state_dict(), False)
-                else:
-                    layer = model.__getattr__(l_key)
-                    passport_layer = passport_model.__getattr__(l_key)
-                    passport_layer.load_state_dict(layer.state_dict(), False)
+            else:
+                layer = model.__getattr__(l_key)
+                passport_layer = passport_model.__getattr__(l_key)
+                passport_layer.load_state_dict(layer.state_dict(), strict=False)
+
+        # no need to load classifer as it has only one layer
 
 
 def load_passport_model_to_normal_model(arch, plkeys, passport_model, model):
-    model.load_state_dict(passport_model.state_dict(), strict=False)
-
     if arch == 'alexnet':
+        # load features from passport model.features
+        model.features.load_state_dict(passport_model.features.state_dict(), strict=False)
+
+        # load scale/bias
         for fidx in plkeys:
             fidx = int(fidx)
+
+            # for private, using public scale/bias, therefore no need force_passport
             model.features[fidx].bn.weight.data.copy_(passport_model.features[fidx].get_scale().view(-1))
             model.features[fidx].bn.bias.data.copy_(passport_model.features[fidx].get_bias().view(-1))
 
             model.features[fidx].bn.weight.requires_grad_(True)
             model.features[fidx].bn.bias.requires_grad_(True)
+
+        # load classifier except last one
+        if isinstance(passport_model.classifier, nn.Sequential):
+            for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
+                if i != len(passport_model.classifier) - 1:  # do not load last one
+                    layer.load_state_dict(passport_layer.state_dict(), strict=False)
     else:
+        feature_pairs = [
+            (model.convbnrelu_1, passport_model.convbnrelu_1),
+            (model.layer1, passport_model.layer1),
+            (model.layer2, passport_model.layer2),
+            (model.layer3, passport_model.layer3),
+            (model.layer4, passport_model.layer4)
+        ]
+
+        # load feature weights
+        for layer, passport_layer in feature_pairs:
+            layer.load_state_dict(passport_layer.state_dict(), strict=False)
+
+        # load scale/bias
         for fidx in plkeys:
             layer_key, i, module_key = fidx.split('.')
 
@@ -142,8 +164,9 @@ def load_passport_model_to_normal_model(arch, plkeys, passport_model, model):
 
             convblock = get_layer(model)
             passblock = get_layer(passport_model)
+
+            # for private, using public scale/bias, therefore no need force_passport
             convblock.bn.weight.data.copy_(passblock.get_scale().view(-1))
             convblock.bn.bias.data.copy_(passblock.get_bias().view(-1))
 
-            convblock.bn.weight.requires_grad_(True)
-            convblock.bn.bias.requires_grad_(True)
+        # no need to load classifer as it has only one layer
