@@ -98,13 +98,13 @@ def construct_passport_kwargs_from_dict(self, need_index=False):
 def load_normal_model_to_passport_model(arch, passport_settings, passport_model, model):
     if arch == 'alexnet':
         # load features weight
-        passport_model.features.load_state_dict(model.features.state_dict(), strict=False)
+        passport_model.features.load_state_dict(model.features.state_dict(), False)
 
         # load classifier except last one
         if isinstance(passport_model.classifier, nn.Sequential):
             for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
                 if i != len(passport_model.classifier) - 1:  # do not load last one
-                    passport_layer.load_state_dict(layer.state_dict(), strict=False)
+                    passport_layer.load_state_dict(layer.state_dict())
     else:
         # for l_key in passport_settings:  # layer
         #     if isinstance(passport_settings[l_key], dict):
@@ -153,7 +153,7 @@ def load_passport_model_to_normal_model(arch, plkeys, passport_model, model):
         if isinstance(passport_model.classifier, nn.Sequential):
             for i, (passport_layer, layer) in enumerate(zip(passport_model.classifier, model.classifier)):
                 if i != len(passport_model.classifier) - 1:  # do not load last one
-                    layer.load_state_dict(passport_layer.state_dict(), strict=False)
+                    layer.load_state_dict(passport_layer.state_dict())
     else:
         feature_pairs = [
             (model.convbnrelu_1, passport_model.convbnrelu_1),
