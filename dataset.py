@@ -248,7 +248,7 @@ def prepare_dataset(args):
     is_tl = args['transfer_learning']
     tl_ds = args['tl_dataset']
     ds = args['dataset'] if not is_tl else tl_ds
-    is_imagenet = 'imagenet1000' in args['dataset']
+    is_imagenet = 'imagenet1000' in ds
 
     if is_imagenet:
         return prepare_imagenet(args)
