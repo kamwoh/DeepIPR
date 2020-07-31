@@ -320,12 +320,12 @@ def prepare_dataset(args):
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=4,
+                              num_workers=8,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
                              shuffle=args.get('shuffle_val', False),
-                             num_workers=4)
+                             num_workers=8)
 
     print(f'Dataset: {len(train_dataset)}/{len(test_dataset)}')
 
