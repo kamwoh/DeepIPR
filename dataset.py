@@ -250,7 +250,7 @@ def prepare_dataset(args):
     ds = args['dataset'] if not is_tl else tl_ds
     is_imagenet = 'imagenet1000' in ds
 
-    if is_imagenet:
+    if 'imagenet1000' in [args['dataset'], args['tl_dataset']]:
         return prepare_imagenet(args)
 
     ##### shortcut ######
