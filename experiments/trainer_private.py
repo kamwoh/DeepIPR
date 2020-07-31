@@ -55,7 +55,7 @@ class TesterPrivate(object):
                     count_private += 1
 
                 if isinstance(m, PassportBlock):
-                    signbit = m.get_scale(True).view(-1).sign()
+                    signbit = m.get_scale().view(-1).sign()
                     publicbit = m.b
 
                     detection = (signbit == publicbit).float().mean().item()

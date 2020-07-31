@@ -1,5 +1,7 @@
 from torch import nn
 
+from models.layers.passportconv2d import PassportBlock
+
 
 def construct_passport_kwargs(self, need_index=False):
     passport_settings = self.passport_config
@@ -96,6 +98,11 @@ def construct_passport_kwargs_from_dict(self, need_index=False):
 
 
 def load_normal_model_to_passport_model(arch, passport_settings, passport_model, model):
+    for m in passport_model.modules():  # detect signature on scale sign
+        if isinstance(m, PassportBlock):
+            m.init_scale(True)
+            m.init_bias(True)
+
     if arch == 'alexnet':
         # load features weight
         passport_model.features.load_state_dict(model.features.state_dict(), False)
