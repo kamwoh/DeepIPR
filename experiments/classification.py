@@ -165,6 +165,8 @@ class ClassificationExperiment(Experiment):
         ##### load / reset weights of passport layers for clone model #####
         tl_model.to(self.device)
         load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
+
+        print(tl_model)
         print('Loaded clone model')
 
         ##### dataset is created at constructor #####
