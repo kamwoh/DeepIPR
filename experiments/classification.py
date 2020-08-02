@@ -11,7 +11,7 @@ from experiments.base import Experiment
 from experiments.trainer import Trainer, Tester
 from experiments.trainer_private import TesterPrivate
 from experiments.utils import construct_passport_kwargs, load_passport_model_to_normal_model, \
-    load_normal_model_to_passport_model
+    load_normal_model_to_passport_model, load_normal_model_to_normal_model
 from models.alexnet_normal import AlexNetNormal
 from models.alexnet_passport import AlexNetPassport
 from models.resnet_normal import ResNet18, ResNet9
@@ -100,6 +100,7 @@ class ClassificationExperiment(Experiment):
             passport_kwargs, plkeys = construct_passport_kwargs(self, True)
             self.passport_kwargs = passport_kwargs
             self.plkeys = plkeys
+            self.is_baseline = False
 
             print('Loading arch: ' + self.arch)
             if self.arch == 'alexnet':
@@ -113,6 +114,8 @@ class ClassificationExperiment(Experiment):
             setup_keys()
         else:  # train normally or train backdoor
             print('Loading arch: ' + self.arch)
+            self.is_baseline = True
+
             if self.arch == 'alexnet':
                 model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
             else:
@@ -164,7 +167,10 @@ class ClassificationExperiment(Experiment):
 
         ##### load / reset weights of passport layers for clone model #####
         tl_model.to(self.device)
-        load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
+        if self.is_baseline:  # baseline
+            load_normal_model_to_normal_model(self.arch, tl_model, self.model)
+        else:
+            load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
 
         print(tl_model)
         print('Loaded clone model')
@@ -218,7 +224,10 @@ class ClassificationExperiment(Experiment):
             valid_metrics = self.trainer.test(self.valid_data)
 
             ##### load transfer learning weights from clone model  #####
-            load_normal_model_to_passport_model(self.arch, self.plkeys, self.model, tl_model)
+            if self.is_baseline:
+                load_normal_model_to_normal_model(self.arch, self.model, tl_model)
+            else:
+                load_normal_model_to_passport_model(self.arch, self.plkeys, self.model, tl_model)
 
             tl_model.to(self.device)
             self.model.to(self.device)
@@ -229,7 +238,7 @@ class ClassificationExperiment(Experiment):
                 wm_metrics = tester.test(self.wm_data, 'WM Result')
 
             ##### check if using weight of finetuend model is still able to extract signature correctly #####
-            if self.train_passport:
+            if not self.is_baseline and self.train_passport:
                 res = tester_passport.test_signature()
                 for key in res: wm_metrics['passport_' + key] = res[key]
 

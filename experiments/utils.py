@@ -162,6 +162,32 @@ def load_normal_model_to_passport_model(arch, plkeys, passport_model, model):
         # no need to load classifer as it has only one layer
 
 
+def load_normal_model_to_normal_model(arch, new_model, model):
+    if arch == 'alexnet':
+        # load features from passport model.features
+        new_model.features.load_state_dict(model.features.state_dict())
+
+        # load classifier except last one
+        if isinstance(new_model.classifier, nn.Sequential):
+            for i, (new_layer, layer) in enumerate(zip(new_model.classifier, model.classifier)):
+                if i != len(new_model.classifier) - 1:  # do not load last one
+                    new_layer.load_state_dict(layer.state_dict())
+    else:
+        feature_pairs = [
+            (model.convbnrelu_1, new_model.convbnrelu_1),
+            (model.layer1, new_model.layer1),
+            (model.layer2, new_model.layer2),
+            (model.layer3, new_model.layer3),
+            (model.layer4, new_model.layer4)
+        ]
+
+        # load feature weights
+        for layer, new_layer in feature_pairs:
+            new_layer.load_state_dict(layer.state_dict(), strict=False)
+
+        # no need to load classifer as it has only one layer
+
+
 def load_passport_model_to_normal_model(arch, plkeys, passport_model, model):
     if arch == 'alexnet':
         # load features from passport model.features
