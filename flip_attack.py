@@ -30,7 +30,7 @@ def detect_signature(model):
     return detection
 
 
-def flipping(model, flipping_perc, plkeys, arch):
+def flipping(model, flipping_perc, plkeys, arch, device):
     if flipping_perc == 0:
         return
 
@@ -41,16 +41,21 @@ def flipping(model, flipping_perc, plkeys, arch):
         sim = 0
         for fidx in plkeys:
             fidx = int(fidx)
+            
+            if model.features[fidx].scale is None:
+                model.features[fidx].init_scale(True)
+                model.features[fidx].init_bias(True)
+                model.to(device)
+            
+            model.features[fidx].scale.data.copy_(model.features[fidx].get_scale(True).view(-1).detach())
+            model.features[fidx].bias.data.copy_(model.features[fidx].get_bias(True).view(-1).detach())
 
-            w = model.features[fidx].bn.weight
+            w = model.features[fidx].scale
+            
+            
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-
-            model.features[fidx].bn.bias.data.zero_()
-
-            model.features[fidx].bn.weight.requires_grad_(True)
-            model.features[fidx].bn.bias.requires_grad_(True)
     else:
         for fidx in plkeys:
             layer_key, i, module_key = fidx.split('.')
@@ -59,18 +64,23 @@ def flipping(model, flipping_perc, plkeys, arch):
                 return m.__getattr__(layer_key)[int(i)].__getattr__(module_key)
 
             convblock = get_layer(model)
+            
+            if convblock.scale is None:
+                convblock.init_scale(True)
+                convblock.init_bias(True)
+                model.to(device)
 
-            w = convblock.bn.weight
+            convblock.scale.data.copy_(convblock.get_scale(True).view(-1).detach())
+            convblock.bias.data.copy_(convblock.get_bias(True).view(-1).detach())
+            
+            w = convblock.scale
             size = w.size(0)
             conv_weights_to_reset.append(w)
             total_weight_size += size
-
-            convblock.bn.bias.data.zero_()
-            convblock.bn.weight.requires_grad_(True)
-            convblock.bn.bias.requires_grad_(True)
+            
 
     randidxs = torch.randperm(total_weight_size)
-    idxs = randidxs[:int(total_weight_size * args.flipperc)]
+    idxs = randidxs[:int(total_weight_size * flipping_perc)]
     print(total_weight_size, len(idxs))
     sim = 0
 
@@ -81,7 +91,7 @@ def flipping(model, flipping_perc, plkeys, arch):
         widxs = idxs[(idxs - size) < 0]
 
         # reset the weights but remains signature sign bit
-        origsign = w.data.sign()
+        origsign = w.data.clone()
         newsign = origsign.clone()
 
         # reverse the sign on target bit
@@ -90,10 +100,12 @@ def flipping(model, flipping_perc, plkeys, arch):
         # assign new signature
         w.data.copy_(newsign)
 
-        sim += ((w.data.sign() == origsign).float().mean())
+        sim += ((w.data.sign() == origsign.sign()).float().mean())
 
         # remove all indices from first layer
         idxs = idxs[(idxs - size) >= 0] - size
+        
+    print('Similarity', sim / len(conv_weights_to_reset))
 
 
 def test(model, criterion, valloader, device):
@@ -165,9 +177,9 @@ def main(arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
     criterion = nn.CrossEntropyLoss()
     prunedf = []
     for perc in [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]:
-        model.load_state_dict(sd)
-        flipping(model, perc, plkeys)
+        model.load_state_dict(sd, strict=False)
         model = model.to(device)
+        flipping(model, perc / 100, plkeys, arch, device)
 
         res = detect_signature(model)
 
