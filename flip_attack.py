@@ -31,9 +31,7 @@ def detect_signature(model):
 
 
 def flipping(model, flipping_perc, plkeys, arch, device):
-    if flipping_perc == 0:
-        return
-
+    
     conv_weights_to_reset = []
     total_weight_size = 0
 
@@ -51,7 +49,6 @@ def flipping(model, flipping_perc, plkeys, arch, device):
             model.features[fidx].bias.data.copy_(model.features[fidx].get_bias(True).view(-1).detach())
 
             w = model.features[fidx].scale
-            
             
             size = w.size(0)
             conv_weights_to_reset.append(w)
@@ -78,6 +75,8 @@ def flipping(model, flipping_perc, plkeys, arch, device):
             conv_weights_to_reset.append(w)
             total_weight_size += size
             
+    if flipping_perc == 0:
+        return
 
     randidxs = torch.randperm(total_weight_size)
     idxs = randidxs[:int(total_weight_size * flipping_perc)]
@@ -157,7 +156,7 @@ def main(arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
                                               'tl_dataset': '',
                                               'batch_size': batch_size})
     passport_kwargs, plkeys = construct_passport_kwargs_from_dict({'passport_config': json.load(open(passport_config)),
-                                                                   'norm_type': 'bn',
+                                                                   'norm_type': 'bn' if scheme == 1 else 'gn',
                                                                    'sl_ratio': 0.1,
                                                                    'key_type': 'shuffle'},
                                                                   True)
