@@ -91,7 +91,7 @@ class TesterPrivate(object):
                 if self.verbose:
                     print(f'{msg} [{i + 1}/{len(dataloader)}]: '
                           f'Loss: {loss_meter / runcount:6.4f} '
-                          f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
+                          f'Acc: {100 * acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
