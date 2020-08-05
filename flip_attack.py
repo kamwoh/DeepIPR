@@ -30,8 +30,64 @@ def detect_signature(model):
     return detection
 
 
+def flipping_alexnet(model, flipping_perc, fidxs, arch, device):
+    conv_weights_to_reset = []
+    total_weight_size = 0
+
+    if arch == 'alexnet':
+        sim = 0
+        for fidx in fidxs:
+            fidx = int(fidx)
+
+            if model.features[fidx].scale is None:
+                model.features[fidx].init_scale(True)
+                model.features[fidx].init_bias(True)
+                model.to(device)
+
+            model.features[fidx].scale.data.copy_(model.features[fidx].get_scale(True).view(-1).detach())
+            model.features[fidx].bias.data.copy_(model.features[fidx].get_bias(True).view(-1).detach())
+
+            w = model.features[fidx].scale
+
+            size = w.size(0)
+            conv_weights_to_reset.append(w)
+            total_weight_size += size
+    else:
+        raise ValueError('not support resnet')
+
+    if flipping_perc == 0:
+        return
+
+    randidxs = torch.randperm(total_weight_size)
+    idxs = randidxs[:int(total_weight_size * flipping_perc)]
+    print(total_weight_size, len(idxs))
+    sim = 0
+
+    for w in conv_weights_to_reset:
+        size = w.size(0)
+        # wsize of first layer = 64, e.g. 0~63 - 64 = -64~-1, this is the indices within the first layer
+        print(len(idxs), size)
+        widxs = idxs[(idxs - size) < 0]
+
+        # reset the weights but remains signature sign bit
+        origsign = w.data.clone()
+        newsign = origsign.clone()
+
+        # reverse the sign on target bit
+        newsign[widxs] *= -1
+
+        # assign new signature
+        w.data.copy_(newsign)
+
+        sim += ((w.data.sign() == origsign.sign()).float().mean())
+
+        # remove all indices from first layer
+        idxs = idxs[(idxs - size) >= 0] - size
+
+    print('Similarity', sim / len(conv_weights_to_reset))
+
+
 def flipping(model, flipping_perc, plkeys, arch, device):
-    
     conv_weights_to_reset = []
     total_weight_size = 0
 
@@ -161,16 +217,19 @@ def main(arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
                                                                    'key_type': 'shuffle'},
                                                                   True)
 
+    fidxs = args.fidxs
     if arch == 'alexnet':
         if scheme == 1:
             model = AlexNetPassport(inchan, nclass, passport_kwargs)
         else:
             model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
     else:
+        assert fidxs == '', 'not support for resnet'
         if scheme == 1:
             model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
         else:
             model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
+
 
     sd = torch.load(loadpath)
     criterion = nn.CrossEntropyLoss()
@@ -178,13 +237,18 @@ def main(arch='alexnet', dataset='cifar10', scheme=1, loadpath='',
     for perc in [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]:
         model.load_state_dict(sd, strict=False)
         model = model.to(device)
-        flipping(model, perc / 100, plkeys, arch, device)
+
+        if fidxs != '':
+            flipping_alexnet(model, perc / 100, fidxs.split(','), arch, device)
+        else:
+            flipping(model, perc / 100, plkeys, arch, device)
 
         res = detect_signature(model)
 
         res['perc'] = perc
         res['tag'] = arch
         res['dataset'] = dataset
+        res['fidxs'] = fidxs
         res.update(test(model, criterion, valloader, device))
         prunedf.append(res)
 
@@ -206,6 +270,7 @@ if __name__ == '__main__':
     parser.add_argument('--passport-config', default='', help='path to passport config')
     parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
                         help='tag number of the experiment')
+    parser.add_argument('--fidxs', default='', help='flip index for alexnet')
 
     args = parser.parse_args()
 
