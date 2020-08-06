@@ -88,4 +88,7 @@ class AlexNetNormal(nn.Module):
 
 if __name__ == '__main__':
     # test load pretrained
-    AlexNetNormal(3, 1000, 'none', True)
+    import torch
+
+    net = AlexNetNormal(3, 1000, 'none', False)
+    print(net.features(torch.randn(1, 3, 224, 224)).size())

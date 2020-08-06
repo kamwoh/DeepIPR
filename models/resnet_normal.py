@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet18
@@ -143,8 +144,8 @@ def ResNet152(**model_kwargs):
 
 
 if __name__ == '__main__':
-    key_model = ResNet18(num_classes=1000, pretrained=True)
-
+    key_model = ResNet18(num_classes=1000, pretrained=False)
+    print(key_model.convbnrelu_1(torch.randn(1, 3, 224, 224)).size())
     # for name in key_model.named_modules():
     #     print(name[0])
     #
