@@ -4,7 +4,12 @@
 
 ### Official pytorch implementation of the paper: 
 #### - DeepIP: Deep Neural Network Intellectual Property Protection with Passports (TPAMI 2021)
+
+[TPAMI 2021](https://ieeexplore.ieee.org/document/9454280)
+
 #### - Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks (NeurIPS 2019)
+
+[NeurIPS 2019](https://proceedings.neurips.cc/paper/2019/hash/75455e062929d32a333868084286bb68-Abstract.html)
 
 Released on September 16, 2019
 
