@@ -20,7 +20,7 @@ Updated on June 16, 2021
 2. Added training and attack bash scripts (see `training.sh` and `attacking.sh`)
 3. Added flipping attack (see `flip_attack.py`)
 4. Added ImageNet experiment
-5. Our framework on GAN IPR protection is also accepted in CVPR 2021, see https://github.com/dingsheng-ong/ipr-gan .
+5. Our framework on GAN IPR protection is also accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
 
 ## Description
 
