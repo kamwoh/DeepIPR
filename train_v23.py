@@ -1,7 +1,11 @@
 import argparse
 from pprint import pprint
 
+import torch
+
 from experiments.classification_private import ClassificationPrivateExperiment
+
+torch.backends.cudnn.benchmark = True
 
 
 def main():
@@ -17,7 +21,8 @@ def main():
     parser.add_argument('--dataset', default='cifar10', choices=['cifar10',
                                                                  'cifar100',
                                                                  'caltech-101',
-                                                                 'caltech-256'],
+                                                                 'caltech-256',
+                                                                 'imagenet1000'],
                         help='training dataset (default: cifar10)')
     parser.add_argument('--norm-type', default='bn', choices=['bn', 'gn', 'in', 'none'],
                         help='norm type (default: bn)')
@@ -33,9 +38,9 @@ def main():
     parser.add_argument('--train-passport', action='store_true', default=False,
                         help='train passport')
     parser.add_argument('--train-backdoor', action='store_true', default=False,
-                        help='train backdoor')
+                        help='train backdoor, adding backdoor images for blackbox detection')
     parser.add_argument('--train-private', action='store_true', default=True,
-                        help='train private')  # always true
+                        help='train private')  # always true for v2 and v3
 
     # paths
     parser.add_argument('--pretrained-path',
@@ -61,7 +66,8 @@ def main():
     parser.add_argument('--tl-dataset', default='cifar100', choices=['cifar10',
                                                                      'cifar100',
                                                                      'caltech-101',
-                                                                     'caltech-256'],
+                                                                     'caltech-256',
+                                                                     'imagenet1000'],
                         help='transfer learning dataset (default: cifar100)')
     parser.add_argument('--tl-scheme', default='rtal', choices=['rtal',
                                                                 'ftal'],

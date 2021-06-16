@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torchvision.models import alexnet
 
 from models.layers.conv2d import ConvBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
@@ -7,7 +8,7 @@ from models.layers.passportconv2d_private import PassportPrivateBlock
 
 class AlexNetPassportPrivate(nn.Module):
 
-    def __init__(self, in_channels, num_classes, passport_kwargs):
+    def __init__(self, in_channels, num_classes, passport_kwargs, pretrained=False, imagenet=False):
         super().__init__()
 
         maxpoolidx = [1, 3, 7]
@@ -23,7 +24,7 @@ class AlexNetPassportPrivate(nn.Module):
             6: 256
         }
         kp = {
-            0: (5, 2),
+            0: (5, 2) if num_classes != 1000 else (11, 4, 2),
             2: (5, 2),
             4: (3, 1),
             5: (3, 1),
@@ -32,21 +33,72 @@ class AlexNetPassportPrivate(nn.Module):
 
         for layeridx in range(8):
             if layeridx in maxpoolidx:
-                layers.append(nn.MaxPool2d(2, 2))
+                ks = 2 if num_classes != 1000 else 3
+                layers.append(nn.MaxPool2d(ks, 2))
             else:
-                k = kp[layeridx][0]
-                p = kp[layeridx][1]
+                if len(kp[layeridx]) == 2:
+                    k, p = kp[layeridx]
+                    s = 1
+                else:
+                    k, s, p = kp[layeridx]
                 normtype = passport_kwargs[str(layeridx)]['norm_type']
                 if passport_kwargs[str(layeridx)]['flag']:
-                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, 1, p, passport_kwargs[str(layeridx)]))
+                    layers.append(PassportPrivateBlock(inp, oups[layeridx], k, s, p, passport_kwargs[str(layeridx)]))
                 else:
-                    layers.append(ConvBlock(inp, oups[layeridx], k, 1, p, normtype))
+                    layers.append(ConvBlock(inp, oups[layeridx], k, s, p, normtype))
 
                 inp = oups[layeridx]
 
+        if num_classes == 1000 or imagenet:
+            layers.append(nn.AdaptiveAvgPool2d((6, 6)))
+
         self.features = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(4 * 4 * 256, num_classes)
+        if num_classes == 1000 or imagenet:
+            self.classifier = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(256 * 6 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, num_classes),
+            )
+        else:
+            self.classifier = nn.Linear(4 * 4 * 256, num_classes)
+
+        if num_classes == 1000 and pretrained:
+            assert normtype == 'none', 'torchvision pretrained alexnet does not have normalization layer'
+            layers = []
+            for layer in self.features:
+                if isinstance(layer, (ConvBlock, PassportPrivateBlock)):
+                    layers.append(layer)
+
+            for layer in self.classifier:
+                if isinstance(layer, nn.Linear):
+                    layers.append(layer)
+
+            self._load_pretrained_from_torch(layers)
+
+    def _load_pretrained_from_torch(self, layers):
+        torchmodel = alexnet(True)
+
+        torchlayers = []
+        for layer in torchmodel.features:
+            if isinstance(layer, nn.Conv2d):
+                torchlayers.append(layer)
+        for layer in torchmodel.classifier:
+            if isinstance(layer, nn.Linear):
+                torchlayers.append(layer)
+
+        for torchlayer, layer in zip(torchlayers, layers):
+            if isinstance(layer, ConvBlock):
+                layer.conv.weight.data.copy_(torchlayer.weight.data)
+                layer.conv.bias.data.copy_(torchlayer.bias.data)
+
+            if isinstance(layer, nn.Linear):
+                layer.weight.data.copy_(torchlayer.weight.data)
+                layer.bias.data.copy_(torchlayer.bias.data)
 
     def set_intermediate_keys(self, pretrained_model, x, y=None):
         with torch.no_grad():

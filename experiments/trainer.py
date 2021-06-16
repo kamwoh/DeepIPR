@@ -45,6 +45,8 @@ def accuracy(output, target, topk=(1,)):
 
 class Tester(object):
     def __init__(self, model, device, verbose=True):
+        if torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
         self.model = model
         self.device = device
         self.verbose = verbose
@@ -57,10 +59,10 @@ class Tester(object):
 
         start_time = time.time()
         with torch.no_grad():
-            for load in dataloader:
+            for i, load in enumerate(dataloader):
                 data, target = load[:2]
-                data = data.to(self.device)
-                target = target.to(self.device)
+                data = data.to(self.device, non_blocking=True)
+                target = target.to(self.device, non_blocking=True)
 
                 pred = self.model(data)
                 loss_meter += F.cross_entropy(pred, target, reduction='sum').item()  # sum up batch loss
@@ -68,6 +70,10 @@ class Tester(object):
                 compare.append((pred, target))
                 acc_meter += pred.eq(target.view_as(pred)).sum().item()
                 runcount += data.size(0)
+                if self.verbose:
+                    print(f'{msg} [{i + 1}/{len(dataloader)}]: '
+                          f'Loss: {loss_meter / runcount:6.4f} '
+                          f'Acc: {100 * acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount
@@ -83,6 +89,8 @@ class Tester(object):
 
 class Trainer(object):
     def __init__(self, model, optimizer, scheduler, device):
+        if torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -101,8 +109,8 @@ class Trainer(object):
 
         start_time = time.time()
         for i, (data, target) in enumerate(dataloader):
-            data = data.to(self.device)
-            target = target.to(self.device)
+            data = data.to(self.device, non_blocking=True)
+            target = target.to(self.device, non_blocking=True)
 
             if iter_wm_dataloader is not None:
                 try:
@@ -111,8 +119,8 @@ class Trainer(object):
                     iter_wm_dataloader = iter(wm_dataloader)
                     wm_data, wm_target = next(iter_wm_dataloader)
 
-                wm_data = wm_data.to(self.device)
-                wm_target = wm_target.to(self.device)
+                wm_data = wm_data.to(self.device, non_blocking=True)
+                wm_target = wm_target.to(self.device, non_blocking=True)
 
                 data = torch.cat([data, wm_data], dim=0)
                 target = torch.cat([target, wm_target], dim=0)
@@ -136,7 +144,7 @@ class Trainer(object):
             (loss + sign_loss).backward()
             self.optimizer.step()
 
-            sign_loss_meter = sign_loss.item()
+            sign_loss_meter += sign_loss.item()
             loss_meter += loss.item()
             acc_meter += accuracy(pred, target)[0].item()
 
@@ -147,6 +155,7 @@ class Trainer(object):
 
         print()
 
+        sign_loss_meter /= len(dataloader)
         loss_meter /= len(dataloader)
         acc_meter /= len(dataloader)
 
@@ -178,10 +187,10 @@ class Trainer(object):
 
         start_time = time.time()
         with torch.no_grad():
-            for load in dataloader:
+            for i, load in enumerate(dataloader):
                 data, target = load[:2]
-                data = data.to(self.device)
-                target = target.to(self.device)
+                data = data.to(self.device, non_blocking=True)
+                target = target.to(self.device, non_blocking=True)
 
                 pred = self.model(data)
                 loss_meter += F.cross_entropy(pred, target, reduction='sum').item()
@@ -189,6 +198,9 @@ class Trainer(object):
 
                 acc_meter += pred.eq(target.view_as(pred)).sum().item()
                 runcount += data.size(0)
+                print(f'{msg} [{i + 1}/{len(dataloader)}]: '
+                      f'Loss: {loss_meter / runcount:6.4f} '
+                      f'Acc: {acc_meter / runcount:6.2f} ({time.time() - start_time:.2f}s)', end='\r')
 
         loss_meter /= runcount
         acc_meter = 100 * acc_meter / runcount

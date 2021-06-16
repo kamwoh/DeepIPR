@@ -9,7 +9,7 @@ from models.losses.sign_loss import SignLoss
 
 
 class PassportBlock(nn.Module):
-    def __init__(self, i, o, ks=3, s=1, pd=1, passport_kwargs={}):
+    def __init__(self, i, o, ks=3, s=1, pd=1, passport_kwargs={}, relu=True):
         super(PassportBlock, self).__init__()
 
         if passport_kwargs == {}:
@@ -62,8 +62,11 @@ class PassportBlock(nn.Module):
             self.bn = nn.InstanceNorm2d(o, affine=False)
         else:
             self.bn = nn.Sequential()
-
-        self.relu = nn.ReLU(inplace=True)
+        
+        if relu:
+            self.relu = nn.ReLU(inplace=True)
+        else:
+            self.relu = None
 
         self.reset_parameters()
 
@@ -215,5 +218,6 @@ class PassportBlock(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         x = self.get_scale(force_passport) * x + self.get_bias(force_passport)
-        x = self.relu(x)
+        if self.relu is not None:
+            x = self.relu(x)
         return x

@@ -1,7 +1,9 @@
 import os
+from pprint import pprint
 
 import torch
 import torch.optim as optim
+from torch import nn
 
 import passport_generator
 from dataset import prepare_dataset, prepare_wm
@@ -25,29 +27,27 @@ class ClassificationPrivateExperiment(Experiment):
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.dataset]
-
-        self.mean = torch.tensor([0.4914, 0.4822, 0.4465])
-        self.std = torch.tensor([0.2023, 0.1994, 0.2010])
 
         self.train_data, self.valid_data = prepare_dataset(self.args)
         self.wm_data = None
 
         if self.use_trigger_as_passport:
-            self.passport_data = prepare_wm('data/trigger_set/pics')
+            self.passport_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
         else:
             self.passport_data = self.valid_data
 
         if self.train_backdoor:
-            self.wm_data = prepare_wm('data/trigger_set/pics')
+            self.wm_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
 
         self.construct_model()
 
         optimizer = optim.SGD(self.model.parameters(),
                               lr=self.lr,
                               momentum=0.9,
-                              weight_decay=0.0005)
+                              weight_decay=0.0001)
 
         if len(self.lr_config[self.lr_config['type']]) != 0:  # if no specify steps, then scheduler = None
             scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
@@ -64,19 +64,36 @@ class ClassificationPrivateExperiment(Experiment):
             self.makedirs_or_load()
 
     def construct_model(self):
+        print('Construct Model')
+
         def setup_keys():
             if self.key_type != 'random':
+                pretrained_from_torch = self.pretrained_path is None
                 if self.arch == 'alexnet':
-                    pretrained_model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
+                    norm_type = 'none' if pretrained_from_torch else self.norm_type
+                    pretrained_model = AlexNetNormal(self.in_channels,
+                                                     self.num_classes,
+                                                     norm_type=norm_type,
+                                                     pretrained=pretrained_from_torch)
                 else:
-                    pretrained_model = ResNet18(num_classes=self.num_classes, norm_type=self.norm_type)
-                pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                    norm_type = 'bn' if pretrained_from_torch else self.norm_type
+                    pretrained_model = ResNet18(num_classes=self.num_classes,
+                                                norm_type=norm_type,
+                                                pretrained=pretrained_from_torch)
+
+                if not pretrained_from_torch:
+                    print('Loading pretrained from self-trained model')
+                    pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                else:
+                    print('Loading pretrained from torch-pretrained model')
+
                 pretrained_model = pretrained_model.to(self.device)
                 self.setup_keys(pretrained_model)
 
         passport_kwargs = construct_passport_kwargs(self)
         self.passport_kwargs = passport_kwargs
 
+        print('Loading arch: ' + self.arch)
         if self.arch == 'alexnet':
             model = AlexNetPassportPrivate(self.in_channels, self.num_classes, passport_kwargs)
         else:
@@ -85,6 +102,8 @@ class ClassificationPrivateExperiment(Experiment):
         self.model = model.to(self.device)
 
         setup_keys()
+
+        pprint(self.model)
 
     def setup_keys(self, pretrained_model):
         if self.key_type != 'random':
@@ -106,6 +125,8 @@ class ClassificationPrivateExperiment(Experiment):
 
         if self.save_interval > 0:
             self.save_model('epoch-0.pth')
+
+        print('Start Training')
 
         for ep in range(1, self.epochs + 1):
             train_metrics = self.trainer.train(ep, self.train_data, self.wm_data)
@@ -141,24 +162,27 @@ class ClassificationPrivateExperiment(Experiment):
         if not self.is_tl:
             raise Exception('Please run with --transfer-learning')
 
-        if self.tl_dataset == 'caltech-101':
-            self.num_classes = 101
-        elif self.tl_dataset == 'cifar100':
-            self.num_classes = 100
-        elif self.tl_dataset == 'caltech-256':
-            self.num_classes = 257
-        else:  # cifar10
-            self.num_classes = 10
+        is_imagenet = self.num_classes == 1000
 
-        # load clone model
+        self.num_classes = {
+            'cifar10': 10,
+            'cifar100': 100,
+            'caltech-101': 101,
+            'caltech-256': 256,
+            'imagenet1000': 1000
+        }[self.tl_dataset]
+
+        ##### load clone model #####
         print('Loading clone model')
         if self.arch == 'alexnet':
             tl_model = AlexNetNormal(self.in_channels,
                                      self.num_classes,
-                                     self.norm_type)
+                                     self.norm_type,
+                                     imagenet=is_imagenet)
         else:
             tl_model = ResNet18(num_classes=self.num_classes,
-                                norm_type=self.norm_type)
+                                norm_type=self.norm_type,
+                                imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
         try:
@@ -213,7 +237,10 @@ class ClassificationPrivateExperiment(Experiment):
             # rtal = reset last layer + train all layer
             # ftal = train all layer
             try:
-                tl_model.classifier.reset_parameters()
+                if isinstance(tl_model.classifier, nn.Sequential):
+                    tl_model.classifier[-1].reset_parameters()
+                else:
+                    tl_model.classifier.reset_parameters()
             except:
                 tl_model.linear.reset_parameters()
 

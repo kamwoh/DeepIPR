@@ -4,9 +4,10 @@ import sys
 from collections import defaultdict
 
 import numpy as np
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets.cifar import CIFAR10, CIFAR100
-from torchvision.datasets.folder import pil_loader, make_dataset, IMG_EXTENSIONS
+from torchvision.datasets.folder import pil_loader, make_dataset, IMG_EXTENSIONS, ImageFolder
 from torchvision.transforms import transforms
 
 
@@ -164,18 +165,21 @@ class WMDataset(Dataset):
         return len(self.datapaths)
 
 
-def prepare_wm(datapath='data/trigger_set/pics',shuffle=True):
+def prepare_wm(datapath='data/trigger_set/pics', shuffle=True, crop=32):
     triggerroot = datapath
     labelpath = 'data/trigger_set/labels-cifar.txt'
+    if not os.path.exists(labelpath):
+        raise FileNotFoundError('Please download trigger set data from https://github.com/adiyoss/WatermarkNN. '
+                                'We are using similar folder structure, you can place downloaded dataset in '
+                                '"data/trigger_set"')
 
-    mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
     transform_list = [
-        transforms.CenterCrop(32),
-        transforms.ToTensor()
+        transforms.CenterCrop(crop),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
     ]
-
-    transform_list.append(transforms.Normalize(mean, std))
 
     wm_transform = transforms.Compose(transform_list)
 
@@ -189,10 +193,65 @@ def prepare_wm(datapath='data/trigger_set/pics',shuffle=True):
     return loader
 
 
+def prepare_imagenet(args):
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+
+    ##### train transform #####
+    transform_list = [
+        # transforms.RandomCrop(224, padding=4),
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ]
+
+    train_transforms = transforms.Compose(transform_list)
+
+    ##### test transform #####
+    transform_list = [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ]
+
+    test_transforms = transforms.Compose(transform_list)
+
+    root = 'data/ILSVRC2012'
+
+    if os.path.exists(root + '/cache.pth'):
+        print('Loading from cache')
+        train_dataset, test_dataset = torch.load(root + '/cache.pth')
+    else:
+        train_dataset = ImageFolder(root + '/train',
+                                    transform=train_transforms)
+        test_dataset = ImageFolder(root + '/val',
+                                   transform=test_transforms)
+        print('Saving to cache')
+        torch.save((train_dataset, test_dataset), root + '/cache.pth')
+
+    train_loader = DataLoader(train_dataset,
+                              batch_size=args['batch_size'],
+                              shuffle=True,
+                              num_workers=32,
+                              drop_last=True)
+    test_loader = DataLoader(test_dataset,
+                             batch_size=args['batch_size'] * 2,
+                             shuffle=False,
+                             num_workers=32)
+
+    return train_loader, test_loader
+
+
 def prepare_dataset(args):
+    print('Loading dataset')
     is_tl = args['transfer_learning']
     tl_ds = args['tl_dataset']
     ds = args['dataset'] if not is_tl else tl_ds
+    is_imagenet = 'imagenet1000' in args['dataset']
+
+    if (is_imagenet and (not is_tl)) or (is_tl and 'imagenet1000' in tl_ds):
+        return prepare_imagenet(args)
 
     ##### shortcut ######
     is_cifar = 'cifar' in ds
@@ -206,19 +265,26 @@ def prepare_dataset(args):
         'caltech-256': Caltech256
     }[ds]
 
-    mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
+    mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
     ##### train transform #####
-    if not is_cifar:
+
+    imgsize = 224 if is_imagenet else 32
+
+    if (not is_cifar) or imgsize == 224:
         transform_list = [
-            transforms.Resize(32),
-            transforms.CenterCrop(32)
+            transforms.Resize(imgsize),
+            transforms.CenterCrop(imgsize)
         ]
     else:
         transform_list = []
 
+    if not is_tl:
+        transform_list.append(
+            transforms.RandomCrop(imgsize, padding=int((4 / 32) * imgsize))
+        )
+
     transform_list.extend([
-        transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -227,10 +293,10 @@ def prepare_dataset(args):
     train_transforms = transforms.Compose(transform_list)
 
     ##### test transform #####
-    if not is_cifar:
+    if (not is_cifar) or imgsize == 224:
         transform_list = [
-            transforms.Resize(32),
-            transforms.CenterCrop(32)
+            transforms.Resize(imgsize),
+            transforms.CenterCrop(imgsize)
         ]
     else:
         transform_list = []
@@ -254,11 +320,13 @@ def prepare_dataset(args):
     train_loader = DataLoader(train_dataset,
                               batch_size=args['batch_size'],
                               shuffle=True,
-                              num_workers=4,
+                              num_workers=8,
                               drop_last=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=args['batch_size'] * 2,
-                             shuffle=False,
-                             num_workers=4)
+                             shuffle=args.get('shuffle_val', False),
+                             num_workers=8)
+
+    print(f'Dataset: {len(train_dataset)}/{len(test_dataset)}')
 
     return train_loader, test_loader

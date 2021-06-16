@@ -3,19 +3,19 @@ from pprint import pprint
 
 import torch
 import torch.optim as optim
+from torch import nn
 
 import passport_generator
 from dataset import prepare_dataset, prepare_wm
 from experiments.base import Experiment
 from experiments.trainer import Trainer, Tester
 from experiments.trainer_private import TesterPrivate
-from experiments.utils import construct_passport_kwargs
+from experiments.utils import construct_passport_kwargs, load_passport_model_to_normal_model, \
+    load_normal_model_to_passport_model, load_normal_model_to_normal_model
 from models.alexnet_normal import AlexNetNormal
 from models.alexnet_passport import AlexNetPassport
-from models.layers.conv2d import ConvBlock
-from models.layers.passportconv2d import PassportBlock
-from models.resnet_normal import ResNet18
-from models.resnet_passport import ResNet18Passport
+from models.resnet_normal import ResNet18, ResNet9
+from models.resnet_passport import ResNet18Passport, ResNet9Passport
 
 
 class ClassificationExperiment(Experiment):
@@ -27,29 +27,27 @@ class ClassificationExperiment(Experiment):
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.dataset]
-
-        self.mean = torch.tensor([0.4914, 0.4822, 0.4465])
-        self.std = torch.tensor([0.2023, 0.1994, 0.2010])
 
         self.train_data, self.valid_data = prepare_dataset(self.args)
         self.wm_data = None
 
         if self.use_trigger_as_passport:
-            self.passport_data = prepare_wm('data/trigger_set/pics')
+            self.passport_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
         else:
             self.passport_data = self.valid_data
 
         if self.train_backdoor:
-            self.wm_data = prepare_wm('data/trigger_set/pics')
+            self.wm_data = prepare_wm('data/trigger_set/pics', crop=self.imgcrop)
 
         self.construct_model()
 
         optimizer = optim.SGD(self.model.parameters(),
                               lr=self.lr,
                               momentum=0.9,
-                              weight_decay=0.0005)
+                              weight_decay=0.0001)
 
         if len(self.lr_config[self.lr_config['type']]) != 0:  # if no specify steps, then scheduler = None
             scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
@@ -66,15 +64,30 @@ class ClassificationExperiment(Experiment):
             self.makedirs_or_load()
 
     def construct_model(self):
+        print('Construct Model')
+
         def setup_keys():
             if self.key_type != 'random':
+                pretrained_from_torch = self.pretrained_path is None
                 if self.arch == 'alexnet':
-                    pretrained_model = AlexNetNormal(self.in_channels, self.num_classes)
+                    norm_type = 'none' if pretrained_from_torch else self.norm_type
+                    pretrained_model = AlexNetNormal(self.in_channels,
+                                                     self.num_classes,
+                                                     norm_type=norm_type,
+                                                     pretrained=pretrained_from_torch)
                 else:
-                    pretrained_model = ResNet18(num_classes=self.num_classes,
-                                                norm_type=self.norm_type)
+                    ResNetClass = ResNet18 if self.arch == 'resnet' else ResNet9
+                    norm_type = 'bn' if pretrained_from_torch else self.norm_type
+                    pretrained_model = ResNetClass(num_classes=self.num_classes,
+                                                   norm_type=norm_type,
+                                                   pretrained=pretrained_from_torch)
 
-                pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                if not pretrained_from_torch:
+                    print('Loading pretrained from self-trained model')
+                    pretrained_model.load_state_dict(torch.load(self.pretrained_path))
+                else:
+                    print('Loading pretrained from torch-pretrained model')
+
                 pretrained_model = pretrained_model.to(self.device)
                 self.setup_keys(pretrained_model)
 
@@ -84,24 +97,30 @@ class ClassificationExperiment(Experiment):
                 model.load_state_dict(sd)
 
         if self.train_passport:
-            passport_kwargs = construct_passport_kwargs(self)
+            passport_kwargs, plkeys = construct_passport_kwargs(self, True)
             self.passport_kwargs = passport_kwargs
+            self.plkeys = plkeys
+            self.is_baseline = False
 
             print('Loading arch: ' + self.arch)
             if self.arch == 'alexnet':
                 model = AlexNetPassport(self.in_channels, self.num_classes, passport_kwargs)
             else:
-                model = ResNet18Passport(num_classes=self.num_classes,
-                                         passport_kwargs=passport_kwargs)
+                ResNetPassportClass = ResNet18Passport if self.arch == 'resnet' else ResNet9Passport
+                model = ResNetPassportClass(num_classes=self.num_classes,
+                                            passport_kwargs=passport_kwargs)
             self.model = model.to(self.device)
 
             setup_keys()
         else:  # train normally or train backdoor
             print('Loading arch: ' + self.arch)
+            self.is_baseline = True
+
             if self.arch == 'alexnet':
                 model = AlexNetNormal(self.in_channels, self.num_classes, self.norm_type)
             else:
-                model = ResNet18(num_classes=self.num_classes, norm_type=self.norm_type)
+                ResNetClass = ResNet18 if self.arch == 'resnet' else ResNet9
+                model = ResNetClass(num_classes=self.num_classes, norm_type=self.norm_type)
 
             load_pretrained()
             self.model = model.to(self.device)
@@ -124,68 +143,36 @@ class ClassificationExperiment(Experiment):
         if not self.is_tl:
             raise Exception('Please run with --transfer-learning')
 
+        is_imagenet = self.num_classes == 1000
+
         self.num_classes = {
             'cifar10': 10,
             'cifar100': 100,
             'caltech-101': 101,
-            'caltech-256': 256
+            'caltech-256': 256,
+            'imagenet1000': 1000
         }[self.tl_dataset]
 
         ##### load clone model #####
         print('Loading clone model')
         if self.arch == 'alexnet':
-            clone_model = AlexNetNormal(self.in_channels,
-                                        self.num_classes,
-                                        self.norm_type)
+            tl_model = AlexNetNormal(self.in_channels,
+                                     self.num_classes,
+                                     self.norm_type,
+                                     imagenet=is_imagenet)
         else:
-            clone_model = ResNet18(num_classes=self.num_classes,
-                                   norm_type=self.norm_type)
+            tl_model = ResNet18(num_classes=self.num_classes,
+                                norm_type=self.norm_type,
+                                imagenet=is_imagenet)
 
         ##### load / reset weights of passport layers for clone model #####
-        try:
-            clone_model.load_state_dict(self.model.state_dict())
-        except:
-            print('Having problem to direct load state dict, loading it manually')
-            if self.arch == 'alexnet':
-                for clone_m, self_m in zip(clone_model.features, self.model.features):
-                    try:
-                        clone_m.load_state_dict(self_m.state_dict())
-                    except:
-                        print('Having problem to load state dict usually caused by missing keys, load by strict=False')
-                        clone_m.load_state_dict(self_m.state_dict(), False)  # load conv weight, bn running mean
-                        clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                        clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
+        tl_model.to(self.device)
+        if self.is_baseline:  # baseline
+            load_normal_model_to_normal_model(self.arch, tl_model, self.model)
+        else:
+            load_passport_model_to_normal_model(self.arch, self.plkeys, self.model, tl_model)
 
-            else:
-                passport_settings = self.passport_config
-                for l_key in passport_settings:  # layer
-                    if isinstance(passport_settings[l_key], dict):
-                        for i in passport_settings[l_key]:  # sequential
-                            for m_key in passport_settings[l_key][i]:  # convblock
-                                clone_m = clone_model.__getattr__(l_key)[int(i)].__getattr__(m_key)  # type: ConvBlock
-                                self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)  # type: PassportBlock
-
-                                try:
-                                    clone_m.load_state_dict(self_m.state_dict())
-                                except:
-                                    print(f'{l_key}.{i}.{m_key} cannot load state dict directly')
-                                    clone_m.load_state_dict(self_m.state_dict(), False)
-                                    clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                                    clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
-
-                    else:
-                        clone_m = clone_model.__getattr__(l_key)
-                        self_m = self.model.__getattr__(l_key)
-
-                        try:
-                            clone_m.load_state_dict(self_m.state_dict())
-                        except:
-                            print(f'{l_key} cannot load state dict directly')
-                            clone_m.load_state_dict(self_m.state_dict(), False)
-                            clone_m.bn.weight.data.copy_(self_m.get_scale().detach().view(-1))
-                            clone_m.bn.bias.data.copy_(self_m.get_bias().detach().view(-1))
-
-        clone_model.to(self.device)
+        print(tl_model)
         print('Loaded clone model')
 
         ##### dataset is created at constructor #####
@@ -195,12 +182,15 @@ class ClassificationExperiment(Experiment):
             # rtal = reset last layer + train all layer
             # ftal = train all layer
             try:
-                clone_model.classifier.reset_parameters()
+                if isinstance(tl_model.classifier, nn.Sequential):
+                    tl_model.classifier[-1].reset_parameters()
+                else:
+                    tl_model.classifier.reset_parameters()
             except:
-                clone_model.linear.reset_parameters()
+                tl_model.linear.reset_parameters()
 
         ##### optimizer setup #####
-        optimizer = optim.SGD(clone_model.parameters(),
+        optimizer = optim.SGD(tl_model.parameters(),
                               lr=self.lr,
                               momentum=0.9,
                               weight_decay=0.0005)
@@ -212,10 +202,13 @@ class ClassificationExperiment(Experiment):
         else:
             scheduler = None
 
-        self.trainer = Trainer(clone_model,
+        ##### training is on finetune model
+        self.trainer = Trainer(tl_model,
                                optimizer,
                                scheduler,
                                self.device)
+
+        ##### tester is on original model
         tester = Tester(self.model,
                         self.device)
         tester_passport = TesterPrivate(self.model,
@@ -226,52 +219,30 @@ class ClassificationExperiment(Experiment):
         best_acc = 0
 
         for ep in range(1, self.epochs + 1):
+            ##### transfer learning on new tasks #####
             train_metrics = self.trainer.train(ep, self.train_data)
             valid_metrics = self.trainer.test(self.valid_data)
 
             ##### load transfer learning weights from clone model  #####
-            try:
-                self.model.load_state_dict(clone_model.state_dict())
-            except:
-                if self.arch == 'alexnet':
-                    for clone_m, self_m in zip(clone_model.features, self.model.features):
-                        try:
-                            self_m.load_state_dict(clone_m.state_dict())
-                        except:
-                            self_m.load_state_dict(clone_m.state_dict(), False)
-                else:
-                    passport_settings = self.passport_config
-                    for l_key in passport_settings:  # layer
-                        if isinstance(passport_settings[l_key], dict):
-                            for i in passport_settings[l_key]:  # sequential
-                                for m_key in passport_settings[l_key][i]:  # convblock
-                                    clone_m = clone_model.__getattr__(l_key)[int(i)].__getattr__(m_key)
-                                    self_m = self.model.__getattr__(l_key)[int(i)].__getattr__(m_key)
+            if self.is_baseline:
+                load_normal_model_to_normal_model(self.arch, self.model, tl_model)
+            else:
+                load_normal_model_to_passport_model(self.arch, self.plkeys, self.model, tl_model)
 
-                                    try:
-                                        self_m.load_state_dict(clone_m.state_dict())
-                                    except:
-                                        self_m.load_state_dict(clone_m.state_dict(), False)
-                        else:
-                            clone_m = clone_model.__getattr__(l_key)
-                            self_m = self.model.__getattr__(l_key)
-
-                            try:
-                                self_m.load_state_dict(clone_m.state_dict())
-                            except:
-                                self_m.load_state_dict(clone_m.state_dict(), False)
-
-            clone_model.to(self.device)
+            tl_model.to(self.device)
             self.model.to(self.device)
 
+            ##### check if using weight of finetuned model is still able to detect trigger set watermark #####
             wm_metrics = {}
             if self.train_backdoor:
                 wm_metrics = tester.test(self.wm_data, 'WM Result')
 
-            if self.train_passport:
+            ##### check if using weight of finetuend model is still able to extract signature correctly #####
+            if not self.is_baseline and self.train_passport:
                 res = tester_passport.test_signature()
                 for key in res: wm_metrics['passport_' + key] = res[key]
 
+            ##### store results #####
             metrics = {}
             for key in train_metrics: metrics[f'train_{key}'] = train_metrics[key]
             for key in valid_metrics: metrics[f'valid_{key}'] = valid_metrics[key]
@@ -281,13 +252,13 @@ class ClassificationExperiment(Experiment):
 
             if self.save_interval and ep % self.save_interval == 0:
                 self.save_model(f'epoch-{ep}.pth')
-                self.save_model(f'tl-epoch-{ep}.pth', clone_model)
+                self.save_model(f'tl-epoch-{ep}.pth', tl_model)
 
             if best_acc < metrics['valid_acc']:
                 print(f'Found best at epoch {ep}\n')
                 best_acc = metrics['valid_acc']
                 self.save_model('best.pth')
-                self.save_model('tl-best.pth', clone_model)
+                self.save_model('tl-best.pth', tl_model)
 
             self.save_last_model()
 
@@ -299,6 +270,8 @@ class ClassificationExperiment(Experiment):
 
         if self.save_interval > 0:
             self.save_model('epoch-0.pth')
+
+        print('Start training')
 
         for ep in range(1, self.epochs + 1):
             train_metrics = self.trainer.train(ep, self.train_data, self.wm_data)

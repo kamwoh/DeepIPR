@@ -15,6 +15,8 @@ from models.alexnet_passport_private import AlexNetPassportPrivate
 from models.layers.passportconv2d import PassportBlock
 from models.layers.passportconv2d_private import PassportPrivateBlock
 from models.losses.sign_loss import SignLoss
+from models.resnet_passport import ResNet18Passport
+from models.resnet_passport_private import ResNet18Private
 
 
 class DatasetArgs():
@@ -65,7 +67,7 @@ def train_maximize(origpassport, fakepassport, model, optimizer, criterion, trai
             mseloss += mse
             maximizeloss += 1 / mse
 
-        (loss + maximizeloss).backward()
+        (loss + signloss + maximizeloss).backward()
 
         torch.nn.utils.clip_grad_norm_(fakepassport, 2)
 
@@ -172,10 +174,15 @@ def test(model, criterion, valloader, device, scheme):
 
 
 def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
-                 loadpath='', passport_config=''):
-    epochs = 100
+                 loadpath='', passport_config='', tagnum=1):
+    epochs = {
+        'imagenet1000': 30
+    }.get(dataset, 100)
     batch_size = 64
-    nclass = 100 if dataset == 'cifar100' else 10
+    nclass = {
+        'cifar100': 100,
+        'imagenet1000': 1000
+    }.get(dataset, 10)
     inchan = 3
     lr = 0.01
     device = torch.device('cuda')
@@ -190,19 +197,19 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
                                                            'sl_ratio': 0.1,
                                                            'key_type': 'shuffle'})
 
-    if scheme == 1:
-        model = AlexNetPassport(inchan, nclass, passport_kwargs)
-    elif scheme == 2:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+    if arch == 'alexnet':
+        if scheme == 1:
+            model = AlexNetPassport(inchan, nclass, passport_kwargs)
+        else:
+            model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
     else:
-        model = AlexNetPassportPrivate(inchan, nclass, passport_kwargs)
+        if scheme == 1:
+            model = ResNet18Passport(num_classes=nclass, passport_kwargs=passport_kwargs)
+        else:
+            model = ResNet18Private(num_classes=nclass, passport_kwargs=passport_kwargs)
 
     sd = torch.load(loadpath)
-    model.load_state_dict(sd, strict=False)
-
-    for fidx in [0, 2]:
-        model.features[fidx].bn.weight.data.copy_(sd[f'features.{fidx}.scale'])
-        model.features[fidx].bn.bias.data.copy_(sd[f'features.{fidx}.bias'])
+    model.load_state_dict(sd)
 
     for param in model.parameters():
         param.requires_grad_(False)
@@ -229,6 +236,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
             m.__delattr__(keyname)
             m.__delattr__(skeyname)
 
+            # re-initialize the key and skey, but by adding noise on it
             m.register_parameter(keyname, nn.Parameter(key.clone() + torch.randn(*key.size()) * 0.001))
             m.register_parameter(skeyname, nn.Parameter(skey.clone() + torch.randn(*skey.size()) * 0.001))
             fakepassport.append(m.__getattr__(keyname))
@@ -268,7 +276,8 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
 
     history = []
 
-    os.makedirs('logs/passport_attack_3', exist_ok=True)
+    dirname = f'logs/passport_attack_3/{loadpath.split("/")[1]}/{loadpath.split("/")[2]}'
+    os.makedirs(dirname, exist_ok=True)
 
     def run_cs():
         cs = []
@@ -308,7 +317,7 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
     torch.save({'origpassport': origpassport,
                 'fakepassport': fakepassport,
                 'state_dict': model.state_dict()},
-               f'logs/passport_attack_3_epochs/{arch}-{scheme}-last-{dataset}-{rep}-{flipperc:.1f}-e0.pth')
+               f'{dirname}/{arch}-{scheme}-last-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-e0.pth')
 
     for ep in range(1, epochs + 1):
         if scheduler is not None:
@@ -342,10 +351,10 @@ def run_maximize(rep=1, flipperc=0, arch='alexnet', dataset='cifar10', scheme=1,
         torch.save({'origpassport': origpassport,
                     'fakepassport': fakepassport,
                     'state_dict': model.state_dict()},
-                   f'logs/passport_attack_3/{arch}-{scheme}-last-{dataset}-{rep}-{flipperc:.1f}-e{ep}.pth')
+                   f'{dirname}/{arch}-{scheme}-{dataset}-{rep}-{tagnum}-{flipperc:.1f}-last.pth')
 
-    histdf = pd.DataFrame(history)
-    histdf.to_csv(f'logs/passport_attack_3/{arch}-{scheme}-history-{dataset}-{rep}-{flipperc:.1f}.csv')
+        histdf = pd.DataFrame(history)
+        histdf.to_csv(f'{dirname}/{arch}-{scheme}-history-{dataset}-{rep}-{tagnum}-{flipperc:.1f}.csv')
 
 
 if __name__ == '__main__':
@@ -356,15 +365,17 @@ if __name__ == '__main__':
     parser.add_argument('--rep', default=1, type=int,
                         help='training id')
     parser.add_argument('--arch', default='alexnet', choices=['alexnet', 'resnet18'])
-    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100'])
+    parser.add_argument('--dataset', default='cifar10', choices=['cifar10', 'cifar100', 'imagenet1000'])
     parser.add_argument('--flipperc', default=0, type=float,
                         help='flip percentange 0~1')
     parser.add_argument('--scheme', default=1, choices=[1, 2, 3], type=int)
     parser.add_argument('--loadpath', default='', help='path to model to be attacked')
     parser.add_argument('--passport-config', default='', help='path to passport config')
+    parser.add_argument('--tagnum', default=torch.randint(100000, ()).item(), type=int,
+                        help='tag number of the experiment')
     args = parser.parse_args()
 
     run_maximize(args.rep, args.flipperc,
                  args.arch, args.dataset,
                  args.scheme, args.loadpath,
-                 args.passport_config)
+                 args.passport_config, args.tagnum)

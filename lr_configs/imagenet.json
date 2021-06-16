@@ -1,0 +1,9 @@
+{
+  "epochs": 90,
+  "type": "steps",
+  "steps": [
+    30,
+    60
+  ],
+  "gamma": 0.1
+}
