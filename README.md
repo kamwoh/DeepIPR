@@ -1,10 +1,10 @@
 # Deep Network IPR Protection
 
-[Project](https://kamwoh.github.io/DeepIPR/) | [ArXiv](https://arxiv.org/abs/1909.07830)
+[Project](https://kamwoh.github.io/DeepIPR/) | [ArXiv](https://arxiv.org/abs/1909.07830) | [PDF](https://doi.org/10.1109/TPAMI.2021.3088846)
 
-### Official pytorch implementation of the paper: "Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks"
-
-#### NeurIPS 2019
+### Official pytorch implementation of the paper: 
+#### - DeepIP: Deep Neural Network Intellectual Property Protection with Passports (TPAMI 2021)
+#### - Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks (NeurIPS 2019)
 
 Released on September 16, 2019
 
@@ -94,9 +94,18 @@ For passport in our experiments, we randomly choose 20 images from the test data
 ## Citation
 If you find this work useful for your research, please cite
 ```
+@article{Deepipr,
+  title={DeepIP: Deep Neural Network Intellectual Property Protection with Passports},
+  author={Fan, Lixin and Ng, Kam Woh and Chan, Chee Seng and Qiang, Yang},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year={Accepted},
+}
+```
+
+```
 @inproceedings{Deepassport,
   title={Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks},
-  author={Fan, Lixin, Ng, Kam Woh and Chan, Chee Seng},
+  author={Fan, Lixin and Ng, Kam Woh and Chan, Chee Seng},
   booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
   year={2019},
 }
