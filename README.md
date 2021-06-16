@@ -8,6 +8,14 @@
 
 Released on September 16, 2019
 
+Updated on June 16, 2021
+
+## Updates
+1. Fix bugs
+2. Added training and attack bash scripts (see `training.sh` and `attacking.sh`)
+3. Added flipping attack (see `flip_attack.py`)
+4. Added ImageNet experiment
+
 ## Description
 
 <p align="justify"> With the rapid development of deep neural networks (DNN), there emerges an urgent need to protect the trained DNN models from being illegally copied, redistributed, or abused without respecting the intellectual properties of legitimate owners. This work proposes novel passport-based DNN ownership verification schemes which are both robust to network modifications and resilient to ambiguity attacks. The gist of embedding digital passports is to design and train DNN models in a way such that, the DNN model performance of an original task will be significantly deteriorated due to forged passports (see Figure 1). In other words genuine passports are not only verified by looking for predefined signatures, but also reasserted by the unyielding DNN model performances. </p>
