@@ -31,7 +31,7 @@ Updated on June 16, 2021
 
 ## How to run
 
-For compability issue, please run the code using `python 3.6` and `pytorch 1.2`
+For compability issue, please run the code using `python 3.6` and `pytorch 1.2`. Also, please see `requirements.txt` or `Dockerfile` to check out the environment.
 
 If you wish to use a real image as the passport, please ensure that you have a pre-trained model before training the passport layer. 
 
