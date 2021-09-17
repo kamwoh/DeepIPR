@@ -1,4 +1,4 @@
-# Deep Network IPR Protection
+# Deep Network IP Protection
 
 [Project](https://kamwoh.github.io/DeepIPR/) | [ArXiv](https://arxiv.org/abs/1909.07830) | [PDF](https://doi.org/10.1109/TPAMI.2021.3088846)
 
@@ -13,14 +13,15 @@
 
 Released on September 16, 2019
 
-Updated on June 16, 2021
+Updated on September 9, 2021
 
 ## Updates
 1. Fix bugs
 2. Added training and attack bash scripts (see `training.sh` and `attacking.sh`)
 3. Added flipping attack (see `flip_attack.py`)
 4. Added ImageNet experiment
-5. Our framework on GAN IPR protection is also accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
+5. Our framework on GAN IP protection is accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
+6. Our framework on RNN IP protection is accepted in Pattern Recognition, see [Project Repo](https://github.com/jianhanlim/ipr-imagecaptioning)
 
 ## Description
 
