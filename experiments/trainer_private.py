@@ -223,7 +223,7 @@ class TrainerPrivate(object):
 
             start_time = time.time()
             with torch.no_grad():
-                for i, load in enumerate(dataloader):
+                for j, load in enumerate(dataloader):
                     data, target = load[:2]
                     data = data.to(self.device, non_blocking=True)
                     target = target.to(self.device, non_blocking=True)
