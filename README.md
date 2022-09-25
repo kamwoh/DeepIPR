@@ -13,7 +13,7 @@
 
 Released on September 16, 2019
 
-Updated on September 9, 2021
+Updated on September 25, 2022
 
 ## Updates
 1. Fix bugs
@@ -111,10 +111,14 @@ For passport in our experiments, we randomly choose 20 images from the test data
 If you find this work useful for your research, please cite
 ```
 @article{Deepipr,
-  title={DeepIP: Deep Neural Network Intellectual Property Protection with Passports},
+  title={DeepIPR: Deep Neural Network Ownership Verification with Passports},
   author={Fan, Lixin and Ng, Kam Woh and Chan, Chee Seng and Qiang, Yang},
   journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
-  year={Accepted},
+  year={2022},
+  volume={44},
+  number={10}
+  pages={6122-6139},
+  doi = {10.1109/TPAMI.2021.3088846}
 }
 ```
 
