@@ -21,7 +21,7 @@ Updated on September 25, 2022
 3. Added flipping attack (see `flip_attack.py`)
 4. Added ImageNet experiment
 5. Our framework on GAN IP protection is accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
-6. Our framework on RNN IP protection is accepted in AACL IJCNLP 2022, see [Project Repo]([https://github.com/jianhanlim/ipr-imagecaptioning](https://github.com/zhiqin1998/RecurrentIPR))
+6. Our framework on RNN IP protection is accepted in AACL IJCNLP 2022, see [Project Repo](https://github.com/zhiqin1998/RecurrentIPR).
 7. Our framework on Multi-modal IP protection is accepted in Pattern Recognition 2022, see [Project Repo](https://github.com/jianhanlim/ipr-imagecaptioning).
 
 ## Description
@@ -119,15 +119,6 @@ If you find this work useful for your research, please cite
   number={10}
   pages={6122-6139},
   doi = {10.1109/TPAMI.2021.3088846}
-}
-```
-
-```
-@inproceedings{Deepassport,
-  title={Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks},
-  author={Fan, Lixin and Ng, Kam Woh and Chan, Chee Seng},
-  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
-  year={2019},
 }
 ```
 
