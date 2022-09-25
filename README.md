@@ -3,9 +3,9 @@
 [Project](https://kamwoh.github.io/DeepIPR/) | [ArXiv](https://arxiv.org/abs/1909.07830) | [PDF](https://doi.org/10.1109/TPAMI.2021.3088846)
 
 ### Official pytorch implementation of the paper: 
-#### - DeepIP: Deep Neural Network Intellectual Property Protection with Passports
+#### - DeepIPR: Deep Neural Network Ownership Verification with Passports
 
-[TPAMI 2021](https://ieeexplore.ieee.org/document/9454280)
+[TPAMI 2022](https://ieeexplore.ieee.org/document/9454280)
 
 #### - Rethinking Deep Neural Network Ownership Verification: Embedding Passports to Defeat Ambiguity Attacks
 
