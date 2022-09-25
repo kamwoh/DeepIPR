@@ -21,7 +21,8 @@ Updated on September 9, 2021
 3. Added flipping attack (see `flip_attack.py`)
 4. Added ImageNet experiment
 5. Our framework on GAN IP protection is accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
-6. Our framework on RNN IP protection is accepted in Pattern Recognition, see [Project Repo](https://github.com/jianhanlim/ipr-imagecaptioning)
+6. Our framework on RNN IP protection is accepted in AACL IJCNLP 2022, see [Project Repo]([https://github.com/jianhanlim/ipr-imagecaptioning](https://github.com/zhiqin1998/RecurrentIPR))
+7. Our framework on Multi-modal IP protection is accepted in Pattern Recognition 2022, see [Project Repo](https://github.com/jianhanlim/ipr-imagecaptioning).
 
 ## Description
 
