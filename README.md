@@ -116,7 +116,7 @@ If you find this work useful for your research, please cite
   journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year={2022},
   volume={44},
-  number={10}
+  number={10},
   pages={6122-6139},
   doi = {10.1109/TPAMI.2021.3088846}
 }
