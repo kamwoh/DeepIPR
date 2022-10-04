@@ -11,7 +11,7 @@
 
 [NeurIPS 2019](https://proceedings.neurips.cc/paper/2019/hash/75455e062929d32a333868084286bb68-Abstract.html)
 
-Released on September 16, 2019
+(Released on September 16, 2019)
 
 Updated on September 25, 2022
 
@@ -20,9 +20,9 @@ Updated on September 25, 2022
 2. Added training and attack bash scripts (see `training.sh` and `attacking.sh`)
 3. Added flipping attack (see `flip_attack.py`)
 4. Added ImageNet experiment
-5. Our framework on GAN IP protection is accepted in CVPR 2021, see [Project Repo](https://github.com/dingsheng-ong/ipr-gan).
-6. Our framework on RNN IP protection is accepted in AACL IJCNLP 2022, see [Project Repo](https://github.com/zhiqin1998/RecurrentIPR).
-7. Our framework on Multi-modal IP protection is accepted in Pattern Recognition 2022, see [Project Repo](https://github.com/jianhanlim/ipr-imagecaptioning).
+5. Our framework on GAN IP protection is accepted in CVPR 2021, see [here](https://github.com/dingsheng-ong/ipr-gan).
+6. Our framework on RNN IP protection is accepted in AACL IJCNLP 2022, see [here](https://github.com/zhiqin1998/RecurrentIPR).
+7. Our framework on Multi-modal IP protection is accepted in Pattern Recognition 2022, see [here](https://github.com/jianhanlim/ipr-imagecaptioning).
 
 ## Description
 
