@@ -109,7 +109,7 @@ For passport in our experiments, we randomly choose 20 images from the test data
 
 ## Citation
 If you find this work useful for your research, please cite
-```
+```bibtex
 @article{Deepipr,
   title={DeepIPR: Deep Neural Network Ownership Verification with Passports},
   author={Fan, Lixin and Ng, Kam Woh and Chan, Chee Seng and Qiang, Yang},
